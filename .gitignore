@@ -1,0 +1,13 @@
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+
+# Superpowers subagent-driven-development scratch workspace
+# (created under .superpowers/sdd/<plan-name>/ if a plan is ever executed
+# with that skill in this repo — disposable once the plan's work is merged)
+.superpowers/sdd/
