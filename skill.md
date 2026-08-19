@@ -1,21 +1,20 @@
 ---
 name: KodeLikeKevin
-description: Conventions and workflow for writing full-stack .NET applications in C# and Blazor. Use whenever creating, editing, reviewing, or scaffolding C#, Blazor (.razor), .csproj, or any other .NET code — including class libraries, Blazor Server/WebAssembly components, data access layers, and unit tests. Do not use for non-.NET work.
+description: General coding conventions that apply to all code, plus additional conventions for full-stack .NET applications in C# and Blazor. Use whenever writing, editing, or reviewing any code — the general principles (KISS/simplicity, SOLID, token efficiency, version control, attribution) always apply. The .NET-specific sections apply on top of those whenever the work involves C#, Blazor (.razor), .csproj, or other .NET code.
 ---
 
-# Full-Stack .NET (C# / Blazor) Conventions
-
-Apply these to all .NET work unless a project's own conventions (its CLAUDE.md or a
-project-scoped skill) say otherwise. Project-level conventions always win.
+# Kode Like Kevin — Coding Conventions
 
 ## Use this skill when
-- Writing or editing C#, Blazor, `.razor`, or `.csproj` files.
-- Scaffolding new .NET projects, components, or libraries.
-- Reviewing .NET code for convention compliance.
+- Writing, editing, or reviewing code in **any** language — apply the
+  "General principles" sections below.
+- Additionally writing or editing C#, Blazor, `.razor`, or `.csproj` files,
+  or scaffolding/reviewing .NET projects — apply the ".NET / C# / Blazor
+  specific" section as well, on top of the general one.
 
 ## Reach for another skill when
-- The task involves no C#/Blazor/.NET code.
-- A project-scoped skill or CLAUDE.md defines conflicting conventions — defer to those.
+- A project-scoped skill or CLAUDE.md defines conflicting conventions —
+  defer to those. Project-level conventions always win.
 
 ## Version control policy
 Never run `git commit` or `git push` unless the user explicitly asks for that
@@ -36,14 +35,38 @@ Work in a way that conserves tokens/context, since it's a finite budget:
   complete the task.
 
 These rules govern *how* work gets done — they never justify skipping a required deliverable
-(tests, XML docs, OpenAPI annotations, user docs, or attribution) defined elsewhere in this skill.
+(tests, docs, or attribution) defined elsewhere in this skill.
 
 ## Core principles
+- **Keep it simple. Always follow KISS (Keep It Simple, Stupid).** Avoid
+  complex code whenever possible. Complexity is anything about a software
+  system's *structure* that makes it harder to understand or modify —
+  unnecessary indirection, premature or speculative abstraction, deep
+  nesting, excess configurability, tangled control flow, or state scattered
+  across more places than it needs to be. When choosing between two designs
+  that solve the problem, prefer the one a future reader can hold in their
+  head fastest.
 - Follow SOLID closely. Single responsibility first. Introduce abstractions
-  (interfaces, extra patterns) only when a concrete need exists — never speculatively (YAGNI).
+  (interfaces, extra patterns, layers) only when a concrete need exists —
+  never speculatively (YAGNI). This is KISS applied to structure.
 - Prefer clarity and explicitness over cleverness. Readable beats clever.
-- Keep it simple. Use additional design patterns only when SOLID or a real
-  requirement calls for them, not by default.
+- Reach for an additional design pattern only when SOLID, a real
+  requirement, or a proven pain point calls for it — not by default.
+
+## Code provenance & licensing
+When code is adapted from an identifiable external source (a doc page,
+Stack Overflow answer, OSS repo, blog post, etc.) rather than written from
+general knowledge, add a short attribution comment above it citing the
+source URL and license (if stated/known). See `references/code-attribution.md`
+for format. This applies to code in any language.
+
+---
+
+# .NET / C# / Blazor specific
+
+Apply the following **in addition to** the general principles above,
+whenever the work involves C#, Blazor, `.razor`, or `.csproj` files.
+Project-level conventions still win over anything here.
 
 ## Naming (standard C# conventions)
 - **PascalCase** — types, methods, properties, events, public fields, namespaces.
@@ -78,13 +101,6 @@ These rules govern *how* work gets done — they never justify skipping a requir
   page/feature, add or update its markdown doc under `docs/user/`. See
   `references/documentation.md`.
 
-## Code provenance & licensing
-When code is adapted from an identifiable external source (a doc page,
-Stack Overflow answer, OSS repo, blog post, etc.) rather than written from
-general knowledge, add a short attribution comment above it citing the
-source URL and license (if stated/known). See `references/code-attribution.md`
-for format.
-
 ## Additional C#/.NET practices
 For async, EF Core, testing frameworks, minimal API/OpenAPI, and XML doc
 conventions, defer to the specialized skills already installed
@@ -95,6 +111,7 @@ project layout conventions specific to this skill, see
 `references/csharp-dotnet-practices.md`.
 
 ## References to load on demand
-- `references/documentation.md` — API dev doc and web app user doc conventions and templates.
-- `references/code-attribution.md` — when and how to attribute adapted external code.
-- `references/csharp-dotnet-practices.md` — nullable types, DI/config, logging, project layout.
+- `references/documentation.md` — API dev doc and web app user doc conventions and templates. (.NET-specific)
+- `references/code-attribution.md` — when and how to attribute adapted external code. (general)
+- `references/csharp-dotnet-practices.md` — nullable types, DI/config, logging, project layout. (.NET-specific)
+-  For Any Code that is licensed, always include a link to where it came from and the license. If you are unsure, indicate in the comment that you are unsure of the license. If you are adapting code from a source, include a link to the source and the license if known. If you are unsure, indicate in the comment that you are unsure of the license.

@@ -1,12 +1,20 @@
 # KodeLikeKevinSkill
 
-This is my personal Claude Code skill for full-stack .NET development (C# and
-Blazor). It encodes conventions and safeguards drawn from 15 years of
-software development, so Claude writes .NET code the way I would — instead
-of re-explaining my preferences on every project.
+This is my personal Claude Code skill for how I want *all* code written,
+with an additional layer of conventions for full-stack .NET development (C#
+and Blazor). It encodes conventions and safeguards drawn from 15 years of
+software development, so Claude writes code the way I would — instead of
+re-explaining my preferences on every project. The general principles apply
+no matter what language or stack is in play; the .NET/C#/Blazor section
+applies on top of those specifically for .NET work.
 
 ## Principles behind this skill
 
+- **KISS, always.** Avoid complex code whenever possible. Complexity is
+  anything about a system's structure that makes it harder to understand or
+  modify — unnecessary indirection, premature abstraction, deep nesting,
+  excess configurability, tangled control flow. Prefer the simplest design
+  that correctly solves the problem in front of you.
 - **SOLID first, patterns second.** Single responsibility comes first;
   additional abstractions (interfaces, design patterns) are introduced only
   when a concrete need exists, never speculatively (YAGNI).
@@ -33,12 +41,14 @@ of re-explaining my preferences on every project.
 
 ## What each file does
 
-- **`skill.md`** — The skill's entry point. Defines when the skill applies
-  (any C#/Blazor/.NET work), the version-control and token-efficiency
-  guardrails, core design principles, naming conventions, Blazor
-  code-behind/scoped-file rules, data-access (Repository pattern) rules,
-  testing requirements, and pointers to the other specialized/reference
-  skills to defer to (e.g. `csharp-async`, `efcore-mssql`, `dotnet-testing`).
+- **`skill.md`** — The skill's entry point. Two layers: (1) general
+  principles that apply to any code in any language — KISS/simplicity,
+  SOLID, clarity, version-control and token-efficiency guardrails, and
+  attribution; (2) a .NET/C#/Blazor-specific layer — naming conventions,
+  Blazor code-behind/scoped-file rules, data-access (Repository pattern)
+  rules, testing requirements, and pointers to the other specialized/
+  reference skills to defer to (e.g. `csharp-async`, `efcore-mssql`,
+  `dotnet-testing`) — applied on top of the general layer for .NET work.
   This is the file Claude reads first and treats as the source of truth.
 
 - **`references/documentation.md`** — Loaded on demand when API or
