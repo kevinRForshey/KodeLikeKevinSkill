@@ -46,14 +46,38 @@ Work in a way that conserves tokens/context, since it's a finite budget:
   complete the task.
 
 These rules govern *how* work gets done — they never justify skipping a required deliverable
-(tests, XML docs, OpenAPI annotations, user docs, or attribution) defined elsewhere in this skill.
+(tests, docs, or attribution) defined elsewhere in this skill.
 
 ## Core principles
+- **Keep it simple. Always follow KISS (Keep It Simple, Stupid).** Avoid
+  complex code whenever possible. Complexity is anything about a software
+  system's *structure* that makes it harder to understand or modify —
+  unnecessary indirection, premature or speculative abstraction, deep
+  nesting, excess configurability, tangled control flow, or state scattered
+  across more places than it needs to be. When choosing between two designs
+  that solve the problem, prefer the one a future reader can hold in their
+  head fastest.
 - Follow SOLID closely. Single responsibility first. Introduce abstractions
-  (interfaces, extra patterns) only when a concrete need exists — never speculatively (YAGNI).
+  (interfaces, extra patterns, layers) only when a concrete need exists —
+  never speculatively (YAGNI). This is KISS applied to structure.
 - Prefer clarity and explicitness over cleverness. Readable beats clever.
-- Keep it simple. Use additional design patterns only when SOLID or a real
-  requirement calls for them, not by default.
+- Reach for an additional design pattern only when SOLID, a real
+  requirement, or a proven pain point calls for it — not by default.
+
+## Code provenance & licensing
+When code is adapted from an identifiable external source (a doc page,
+Stack Overflow answer, OSS repo, blog post, etc.) rather than written from
+general knowledge, add a short attribution comment above it citing the
+source URL and license (if stated/known). See `references/code-attribution.md`
+for format. This applies to code in any language.
+
+---
+
+# .NET / C# / Blazor specific
+
+Apply the following **in addition to** the general principles above,
+whenever the work involves C#, Blazor, `.razor`, or `.csproj` files.
+Project-level conventions still win over anything here.
 
 ## Naming
 
