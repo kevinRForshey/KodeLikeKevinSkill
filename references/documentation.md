@@ -36,10 +36,50 @@ app.MapGet("/customers/{id}", (int id, ICustomerRepository repo) =>
 .Produces(StatusCodes.Status404NotFound);
 ```
 
+## Node/TypeScript API documentation
+
+Any time you add or change a public API surface in a Node/TypeScript
+project — an exported function/class other code depends on, or an HTTP
+route — do both of the following:
+
+1. **JSDoc/TSDoc comments** on the exported surface: a summary line plus
+   `@param`, `@returns`, and `@throws` tags as applicable.
+2. **OpenAPI/Swagger annotations kept current**, using whatever the
+   project's framework already provides (e.g. the NestJS Swagger module,
+   `tsoa` decorators, `zod-to-openapi` schemas). Don't introduce a second
+   OpenAPI toolchain alongside an existing one.
+
+```typescript
+/**
+ * Retrieves a customer by id.
+ * @param id - The customer's unique identifier.
+ * @returns The matching customer.
+ * @throws {NotFoundError} If no customer has that id.
+ */
+export async function getCustomer(id: string): Promise<Customer> {
+  // ...
+}
+```
+
+## Python API documentation
+
+Any time you add or change a public API surface in a Python project — a
+public function/method/class other code depends on, or an HTTP route —
+do both of the following:
+
+1. **Docstrings with type hints** on the public surface, following the
+   conventions in `references/python-practices.md`.
+2. **OpenAPI/Swagger annotations kept current**, using whatever the
+   project's framework already provides (e.g. FastAPI's automatic docs
+   generated from type hints and Pydantic models, `flask-smorest`,
+   `drf-yasg`). Don't introduce a second OpenAPI toolchain alongside an
+   existing one.
+
 ## Web application user documentation
 
-Any time you add or change a user-facing Blazor page or feature, add or
-update a markdown file describing it for end users:
+Any time you add or change a user-facing page or feature — a Blazor page,
+a React page/component, or any other UI — add or update a markdown file
+describing it for end users:
 
 - **Location:** `docs/user/<feature-name>.md` (one file per feature/page;
   kebab-case filename matching the feature).
