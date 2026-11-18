@@ -41,34 +41,46 @@ applies on top of those specifically for .NET work.
 
 ## What each file does
 
-- **`skill.md`** — The skill's entry point. Two layers: (1) general
-  principles that apply to any code in any language — KISS/simplicity,
-  SOLID, clarity, version-control and token-efficiency guardrails, and
-  attribution; (2) a .NET/C#/Blazor-specific layer — naming conventions,
-  Blazor code-behind/scoped-file rules, data-access (Repository pattern)
-  rules, testing requirements, and pointers to the other specialized/
-  reference skills to defer to (e.g. `csharp-async`, `efcore-mssql`,
-  `dotnet-testing`) — applied on top of the general layer for .NET work.
-  This is the file Claude reads first and treats as the source of truth.
+- **`skill.md`** — The skill's entry point, kept deliberately lean since it
+  loads in full every time the skill triggers. It holds only what's
+  universal across .NET, Node/TS/React, and Python: KISS/SOLID/YAGNI,
+  clarity-over-cleverness, version-control and token-efficiency guardrails,
+  the Repository-pattern rule for data access, the testing bar, and
+  pointers to the reference files below plus the specialized skills to
+  defer to for C#/.NET specifics (e.g. `csharp-async`, `efcore-mssql`,
+  `dotnet-testing`). This is the file Claude reads first and treats as the
+  source of truth; everything language-specific lives one hop away so a
+  single-language task doesn't pay to load conventions for the other two.
+
+- **`references/csharp-dotnet-practices.md`** — Loaded on demand for C#/
+  .NET/Blazor work: naming conventions, Blazor code-behind/scoped-file
+  rules, nullable reference types, use of `record` types and pattern
+  matching, DI service lifetimes and the options pattern for configuration,
+  structured logging and exception-handling boundaries, and layered
+  solution/project structure.
+
+- **`references/typescript-node-react-practices.md`** — Loaded on demand
+  for TypeScript/JavaScript/React/Node/HTML work: naming conventions,
+  TypeScript strictness, React/hooks component conventions, Node.js
+  patterns, HTML semantics/accessibility, and testing tooling (Vitest +
+  React Testing Library).
+
+- **`references/python-practices.md`** — Loaded on demand for Python work:
+  naming conventions, PEP 8 style, typing, PEP 257 docstrings, pytest
+  conventions, and the Zen of Python applied literally.
 
 - **`references/documentation.md`** — Loaded on demand when API or
   user-facing changes are made. Details exactly what's required for API
-  developer documentation (XML doc comments + OpenAPI/Swagger annotations)
-  and for end-user documentation of Blazor features (`docs/user/*.md`),
-  including when a new doc file is warranted versus updating an existing
-  one.
+  developer documentation (doc comments + OpenAPI/Swagger annotations,
+  per language) and for end-user documentation of Blazor/React features
+  (`docs/user/*.md`), including when a new doc file is warranted versus
+  updating an existing one.
 
 - **`references/code-attribution.md`** — Loaded on demand when code is
   adapted from an external source. Defines what counts as an "identifiable
   source" requiring attribution, the comment format to use
   (`// Source: <url> (<license>) — <note>`), and how to handle sources with
   an unstated license.
-
-- **`references/csharp-dotnet-practices.md`** — Loaded on demand for topics
-  not owned by another installed skill: nullable reference types, use of
-  `record` types and pattern matching, DI service lifetimes and the options
-  pattern for configuration, structured logging and exception-handling
-  boundaries, and layered solution/project structure.
 
 - **`LICENSE`** — Apache License 2.0 covering this skill's contents.
 
