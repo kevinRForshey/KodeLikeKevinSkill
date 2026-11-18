@@ -1,11 +1,24 @@
-# Additional C# / .NET Practices
+# C# / .NET / Blazor Practices
 
-Detail for the "Additional .NET/C# practices" pointer in `skill.md`. These
-cover topics not already owned by another installed skill. For async
-patterns, EF Core, unit testing frameworks, minimal API/OpenAPI conventions,
-and XML doc comment conventions, use the csharp-async, efcore-mssql,
-dotnet-testing, aspnet-minimal-api-openapi, csharp-docs, and
-dotnet-best-practices skills instead of this file.
+Detail for the "References" pointer in `skill.md`. These cover topics not
+already owned by another installed skill. For async patterns, EF Core, unit
+testing frameworks, minimal API/OpenAPI conventions, and XML doc comment
+conventions, use the csharp-async, efcore-mssql, dotnet-testing,
+aspnet-minimal-api-openapi, csharp-docs, and dotnet-best-practices skills
+instead of this file.
+
+## Naming
+- **PascalCase** — types, methods, properties, events, public fields, namespaces.
+- **camelCase** — local variables and method parameters.
+- **_camelCase** (leading underscore) — private instance fields.
+- Interfaces prefixed with `I` (e.g. `IUserRepository`).
+- Async methods suffixed with `Async`.
+
+## Blazor components
+- Default to code-behind: `Dashboard.razor` pairs with `Dashboard.razor.cs`.
+- Add `Dashboard.razor.css` (scoped CSS) **only** when the component has its own styling.
+- Add `Dashboard.razor.js` (collocated JS module) **only** when the component needs JS interop.
+- Do not create empty `.js`/`.css` files for components that don't need them.
 
 ## Nullable reference types & modern C#
 
