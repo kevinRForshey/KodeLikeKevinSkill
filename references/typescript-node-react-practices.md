@@ -31,6 +31,15 @@ directly.
 - Don't add `useMemo`/`useCallback` speculatively — only once a real
   performance need is demonstrated (YAGNI).
 
+## Next.js (App Router)
+- Default to server components; mark `"use client"` only where interactivity
+  or a browser API actually requires it — don't reach for it by habit.
+- Fetch data in the component/route that needs it rather than prop-drilling
+  it down through many layers — a server component can fetch close to
+  where it's used.
+- Keep client-side state minimal; don't reach for a global store when local
+  state or URL state is sufficient.
+
 ## Node.js patterns
 - Use `async`/`await` over raw Promise chains or callbacks.
 - Validate external input (request bodies, env vars, query params) at the

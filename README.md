@@ -38,10 +38,29 @@ applies on top of those specifically for .NET work.
   deliverable like tests or docs.
 - **Project conventions win.** A project's own CLAUDE.md or project-scoped
   skill always overrides the conventions here.
+- **Direct, not agreeable.** State real problems and tradeoffs plainly; skip
+  unearned praise; push back on scope creep and over-engineering.
+- **Plan before changing code, validate before calling it done.** Non-trivial
+  changes get a short plan and a go-ahead first; finished work gets checked
+  against the actual requirement and edge cases, not just "does it compile."
+
+## Spec-driven development commands
+
+Five `klk-`prefixed commands carry a feature from a plain-language
+description to tested, implemented code: `klk-create-spec` →
+`klk-create-stories` → `klk-create-qa` → `klk-implement-stories` →
+`klk-run-qa`. Each command reads the previous one's output and refuses to
+advance past a gate it hasn't actually met (an unresolved ambiguity, a story
+with no acceptance criteria, a test that isn't really failing or passing) —
+no step is allowed to paper over a gap to look done. They can be run one at
+a time, or chained as one pipeline on request; a chained run still stops at
+the first unmet gate rather than forcing through. See
+`references/sdd-overview.md` for the shared artifact layout this whole
+lifecycle uses.
 
 ## What each file does
 
-- **`skill.md`** — The skill's entry point, kept deliberately lean since it
+- **`SKILL.md`** — The skill's entry point, kept deliberately lean since it
   loads in full every time the skill triggers. It holds only what's
   universal across .NET, Node/TS/React, and Python: KISS/SOLID/YAGNI,
   clarity-over-cleverness, version-control and token-efficiency guardrails,
@@ -61,13 +80,15 @@ applies on top of those specifically for .NET work.
 
 - **`references/typescript-node-react-practices.md`** — Loaded on demand
   for TypeScript/JavaScript/React/Node/HTML work: naming conventions,
-  TypeScript strictness, React/hooks component conventions, Node.js
-  patterns, HTML semantics/accessibility, and testing tooling (Vitest +
-  React Testing Library).
+  TypeScript strictness, React/hooks component conventions, a Next.js App
+  Router subsection, Node.js patterns, HTML semantics/accessibility, and
+  testing tooling (Vitest + React Testing Library).
 
 - **`references/python-practices.md`** — Loaded on demand for Python work:
-  naming conventions, PEP 8 style, typing, PEP 257 docstrings, pytest
-  conventions, and the Zen of Python applied literally.
+  naming conventions, PEP 8 style and dependency management, typing
+  (including Pydantic for FastAPI schemas), PEP 257 docstrings, pytest
+  conventions, EEG/EDF-style signal-processing notes, and the Zen of Python
+  applied literally.
 
 - **`references/documentation.md`** — Loaded on demand when API or
   user-facing changes are made. Details exactly what's required for API
@@ -81,6 +102,19 @@ applies on top of those specifically for .NET work.
   source" requiring attribution, the comment format to use
   (`// Source: <url> (<license>) — <note>`), and how to handle sources with
   an unstated license.
+
+- **`references/sdd-overview.md`** — Loaded once per SDD command
+  invocation. The shared artifact layout (`docs/sdd/<feature-slug>/`), the
+  story status model (`Draft` → `Ready for QA` → `Tests Written` →
+  `Implemented` → `Passing`), and the gate/traceability rules all five
+  `klk-` commands follow.
+
+- **`references/sdd-create-spec.md`**, **`sdd-create-stories.md`**,
+  **`sdd-create-qa.md`**, **`sdd-implement-stories.md`**,
+  **`sdd-run-qa.md`** — One file per `klk-` command, loaded on demand for
+  the command actually invoked: turning a description into `spec.md`,
+  `spec.md` into `stories.md`, stories into failing tests, failing tests
+  into passing code, and a real test run into each story's final status.
 
 - **`LICENSE`** — Apache License 2.0 covering this skill's contents.
 

@@ -19,6 +19,8 @@ instead of this file.
 - Add `Dashboard.razor.css` (scoped CSS) **only** when the component has its own styling.
 - Add `Dashboard.razor.js` (collocated JS module) **only** when the component needs JS interop.
 - Do not create empty `.js`/`.css` files for components that don't need them.
+- Be explicit about render-mode (Server/WASM/Auto) implications for state —
+  don't assume a WASM-only pattern applies to Server, or vice versa.
 
 ## Nullable reference types & modern C#
 
@@ -50,6 +52,9 @@ string Describe(Shape shape) => shape switch
   stateless or thread-safe shared services (e.g., an `IMemoryCache` wrapper).
 - Avoid captive dependencies — never inject a `Scoped` or `Transient`
   service into a `Singleton`.
+- Prefer constructor injection over a service locator; keep DI registrations
+  explicit and visible rather than resolving services ad hoc from
+  `IServiceProvider` inside business logic.
 - Use the options pattern (`IOptions<T>` / `IOptionsSnapshot<T>`) for
   configuration values bound from `appsettings.json`, rather than injecting
   `IConfiguration` directly and reading keys by string throughout the
