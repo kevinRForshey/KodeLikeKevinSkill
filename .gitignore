@@ -11,3 +11,12 @@ Thumbs.db
 # (created under .superpowers/sdd/<plan-name>/ if a plan is ever executed
 # with that skill in this repo — disposable once the plan's work is merged)
 .superpowers/sdd/
+
+# Local Claude Code session state (permission settings, headroom lock
+# files) — machine-specific, not part of the skill itself.
+.claude/
+
+# docs/sdd/ worked examples are deliberately kept on disk but untracked —
+# they demonstrate the klk- pipeline without bloating the repo's history
+# with throwaway spec/story artifacts.
+docs/sdd/
