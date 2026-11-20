@@ -15,14 +15,20 @@ directly.
 - Follow PEP 8. Defer to the project's formatter (black, ruff format) if one
   is configured, rather than hand-formatting to match it.
 - Use f-strings for interpolation, not `%` formatting or `.format()`.
+- Use explicit dependency/environment management (venv, poetry, or uv) —
+  match whatever the project already uses rather than introducing a second
+  tool into it.
 
 ## Typing
 - Add type hints to every public function/method signature (params and
-  return type).
+  return type); keep the codebase mypy-clean wherever the project already
+  uses typing.
 - Prefer PEP 604 `X | None` union syntax over `Optional[X]` on Python ≥3.10
   projects.
 - Use `dataclasses` (or `pydantic` models where validation is needed) for
   data-carrying types over plain dicts/tuples passed around as pseudo-records.
+- For FastAPI (or similar) request/response schemas specifically, use
+  Pydantic models, not raw dicts.
 
 ## Docstrings (PEP 257)
 - Every public module, class, and function gets a docstring: one summary
@@ -35,6 +41,11 @@ directly.
   loops.
 - Cover both happy-path and failing/error cases. If no test setup exists
   yet, create one and backfill tests for anything currently untested.
+
+## Data/signal-processing pipelines (e.g. EEG/EDF)
+- Be explicit about units, sample rates, and array shapes in docstrings or
+  type hints — silent shape mismatches are a classic source of subtle bugs
+  in this domain.
 
 ## The Zen of Python, applied literally
 Treat `import this` as a real design checklist, not a slogan:

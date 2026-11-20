@@ -1,7 +1,7 @@
 # Documentation Requirements
 
-Detail for the "Documentation requirements" rule in `skill.md`. Applies whenever
-this skill's "Use this skill when" triggers apply.
+Detail for the `## Documentation & attribution` section in `SKILL.md`.
+Applies whenever this skill's "Use this skill when" triggers apply.
 
 ## API developer documentation
 

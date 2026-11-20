@@ -1,6 +1,6 @@
 # Code Provenance & Licensing
 
-Detail for the "Code provenance & licensing" rule in `skill.md`.
+Detail for the `## Documentation & attribution` section in `SKILL.md`.
 
 ## When attribution is required
 

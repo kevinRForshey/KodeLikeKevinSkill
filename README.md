@@ -38,10 +38,36 @@ applies on top of those specifically for .NET work.
   deliverable like tests or docs.
 - **Project conventions win.** A project's own CLAUDE.md or project-scoped
   skill always overrides the conventions here.
+- **Direct, not agreeable.** State real problems and tradeoffs plainly; skip
+  unearned praise; push back on scope creep and over-engineering.
+- **Plan before changing code, validate before calling it done.** Non-trivial
+  changes get a short plan and a go-ahead first; finished work gets checked
+  against the actual requirement and edge cases, not just "does it compile."
+
+## Spec-driven development commands
+
+Six `klk-`prefixed commands carry a feature from a plain-language
+description to tested, implemented code: `klk-create-spec` →
+`klk-create-tech-spec` → `klk-create-tests` → `klk-create-stories` →
+`klk-implement-stories` → `klk-run-qa`. The load-bearing design choice:
+tests are written from the technical spec, *before* stories exist — the
+Definition of Done (`tests.md`) is fixed before any task breakdown happens,
+so later story-writing can't quietly redefine what "done" means. Stories
+cite which already-written tests they're responsible for turning green
+rather than inventing their own acceptance criteria.
+
+Each command reads the previous one's output and refuses to advance past a
+gate it hasn't actually met (an unresolved ambiguity, an AC with no test
+recorded, a story with no acceptance criteria, a test that isn't really
+failing or passing) — no step is allowed to paper over a gap to look done.
+They can be run one at a time, or chained as one pipeline on request; a
+chained run still stops at the first unmet gate rather than forcing
+through. See `references/sdd-overview.md` for the shared artifact layout
+this whole lifecycle uses.
 
 ## What each file does
 
-- **`skill.md`** — The skill's entry point, kept deliberately lean since it
+- **`SKILL.md`** — The skill's entry point, kept deliberately lean since it
   loads in full every time the skill triggers. It holds only what's
   universal across .NET, Node/TS/React, and Python: KISS/SOLID/YAGNI,
   clarity-over-cleverness, version-control and token-efficiency guardrails,
@@ -61,13 +87,15 @@ applies on top of those specifically for .NET work.
 
 - **`references/typescript-node-react-practices.md`** — Loaded on demand
   for TypeScript/JavaScript/React/Node/HTML work: naming conventions,
-  TypeScript strictness, React/hooks component conventions, Node.js
-  patterns, HTML semantics/accessibility, and testing tooling (Vitest +
-  React Testing Library).
+  TypeScript strictness, React/hooks component conventions, a Next.js App
+  Router subsection, Node.js patterns, HTML semantics/accessibility, and
+  testing tooling (Vitest + React Testing Library).
 
 - **`references/python-practices.md`** — Loaded on demand for Python work:
-  naming conventions, PEP 8 style, typing, PEP 257 docstrings, pytest
-  conventions, and the Zen of Python applied literally.
+  naming conventions, PEP 8 style and dependency management, typing
+  (including Pydantic for FastAPI schemas), PEP 257 docstrings, pytest
+  conventions, EEG/EDF-style signal-processing notes, and the Zen of Python
+  applied literally.
 
 - **`references/documentation.md`** — Loaded on demand when API or
   user-facing changes are made. Details exactly what's required for API
@@ -82,8 +110,35 @@ applies on top of those specifically for .NET work.
   (`// Source: <url> (<license>) — <note>`), and how to handle sources with
   an unstated license.
 
+- **`references/sdd-overview.md`** — Loaded once per SDD command
+  invocation. The shared artifact layout (`docs/sdd/<feature-slug>/`:
+  `spec.md` → `tech-spec.md` → `tests.md` → `stories.md`), the story status
+  model (`Ready for Implementation` → `Implemented` → `Passing`),
+  and the gate/traceability rules all six `klk-` commands follow.
+
+- **`references/sdd-create-spec.md`**, **`sdd-create-tech-spec.md`**,
+  **`sdd-create-tests.md`**, **`sdd-create-stories.md`**,
+  **`sdd-implement-stories.md`**, **`sdd-run-qa.md`** — One file per `klk-`
+  command, loaded on demand for the command actually invoked: a plain
+  description into `spec.md`; `spec.md` into `tech-spec.md` (the technical
+  design plus acceptance criteria); `tech-spec.md`'s acceptance criteria
+  into failing tests and `tests.md` (the Definition of Done); `tests.md`
+  into an implementation-sized `stories.md` breakdown; stories into passing
+  code; and a real test run into each story's final status.
+
+- **`scripts/sdd_check.py`** — The deterministic gate logic every `klk-`
+  command runs against, rather than eyeballing markdown: slug derivation,
+  `NEEDS CLARIFICATION` detection (shared by `spec.md`/`tech-spec.md`),
+  AC-to-test coverage, story status/AC validation, and status edits that
+  refuse any transition that isn't a legal single step in the story status
+  machine. `scripts/tests/test_sdd_check.py` is its own unit-test suite
+  (`python3 -m unittest discover -s scripts/tests`) — the thing enforcing
+  this skill's testing discipline is itself held to it.
+
 - **`LICENSE`** — Apache License 2.0 covering this skill's contents.
 
-- **`.gitignore`** — Excludes OS/editor cruft and the disposable
+- **`.gitignore`** — Excludes OS/editor cruft, the disposable
   `.superpowers/sdd/` scratch workspace created when a plan is executed with
-  the `subagent-driven-development` skill in this repo.
+  the `subagent-driven-development` skill in this repo, and the `docs/sdd/`
+  worked examples (kept on disk for validation, untracked so they don't
+  bloat history).
