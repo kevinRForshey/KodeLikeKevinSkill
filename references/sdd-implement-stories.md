@@ -2,15 +2,17 @@
 
 See `sdd-overview.md` for artifact layout and gates before using this file.
 
-**Input**: stories in `stories.md` with status `Tests Written` (tests
-exist and are currently red).
+**Input**: stories in `stories.md` with status `Ready for Implementation`
+(their tests already exist, per `tests.md`, and are currently red).
 **Output**: production code that turns each targeted story's tests green;
 each story's status updated to `Implemented`.
 
-1. Read `stories.md` and the failing tests for the story (or stories) to
-   implement. **Refuse a story that isn't `Tests Written`** — name it and
-   point at `klk-create-qa` rather than implementing against no tests or
-   against tests you write yourself in this same step.
+1. Run `python3 scripts/sdd_check.py gate-stories docs/sdd/<feature-slug>/stories.md --ids <target US-IDs> --status "Ready for Implementation"`.
+   **Refuse any story the script flags** — name it and point at
+   `klk-create-tests`/`klk-create-stories` rather than implementing against
+   no tests or against tests written yourself in this same step. Then read
+   `stories.md` (its `Tests:` line) and the failing tests themselves for
+   the story (or stories) to implement.
 2. Implement the minimum real production code that satisfies the story's
    acceptance criteria and makes its tests pass — following this skill's
    `## Core principles` (KISS/SOLID/YAGNI) and the relevant
@@ -25,9 +27,10 @@ each story's status updated to `Implemented`.
    attribution comments for anything adapted from an identifiable external
    source.
 5. Run the story's tests yourself as you go (standard red-green-refactor) —
-   but **don't mark the story `Passing`**. Update its status only to
-   `Implemented`; `klk-run-qa` is the independent gate that confirms
-   `Passing` with its own full run.
+   but **don't mark the story `Passing`**. Update its status only with
+   `python3 scripts/sdd_check.py set-status docs/sdd/<feature-slug>/stories.md <US-ID> "Implemented"`;
+   `klk-run-qa` is the independent gate that confirms `Passing` with its own
+   full run.
 6. If implementing one story surfaces a needed change to an earlier story's
    already-passing tests, stop and report the conflict rather than quietly
    editing both to agree.

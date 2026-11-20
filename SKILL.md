@@ -1,6 +1,6 @@
 ---
 name: KodeLikeKevinSkill
-description: Personal coding conventions and SOLID/YAGNI workflow spanning full-stack .NET (C#/Blazor), Node.js/TypeScript/React/JavaScript/HTML, and Python. Use whenever creating, editing, reviewing, or scaffolding C#, Blazor (.razor), .csproj, TypeScript/JavaScript (.ts/.tsx/.js/.jsx), React components, HTML, package.json-based Node projects, or Python (.py, pyproject.toml) code — including class libraries, UI components, data access layers, APIs, and unit tests. Also use for any question about naming, idiomatic style, project layout, or best practices in these languages, even a quick one-off question with no file being written or edited yet — don't wait for an explicit "write/edit this file" request before applying it. Also use whenever the user invokes a klk-prefixed spec-driven-development command (klk-create-spec, klk-create-stories, klk-create-qa, klk-implement-stories, klk-run-qa), or asks to run the full SDD pipeline for a feature.
+description: Kevin's all-in-one personal engineering conventions and workflow — applies to every software engineering task in any language, with full depth for .NET (C#/Blazor), Node.js/TypeScript/React/JavaScript/HTML, and Python. Use for writing, editing, reviewing, or scaffolding any code — class libraries, UI components, data access layers, APIs, scripts, unit tests, in any language — and for the senior-engineer workflow around it: planning before non-trivial changes, validating before calling something done, direct/non-agreeable feedback, SOLID/YAGNI discipline, documentation and code-attribution requirements, and token-conscious work habits. Also use for any question about naming, idiomatic style, project layout, or best practices in any language, even a quick one-off question with no file being written or edited yet — don't wait for an explicit "write/edit this file" request before applying it. Also use whenever the user invokes a klk-prefixed spec-driven-development command (klk-create-spec, klk-create-tech-spec, klk-create-tests, klk-create-stories, klk-implement-stories, klk-run-qa), or asks to run the full SDD pipeline for a feature.
 ---
 
 # Full-Stack Coding Conventions (.NET, Node/TS/React, Python)
@@ -152,33 +152,48 @@ the whole of it.
   and scoped to the actual diff, not the whole plan restated.
 
 ## Spec-driven development (SDD) commands
-Five `klk-`prefixed commands take a feature from a plain-language description
+Six `klk-`prefixed commands take a feature from a plain-language description
 through to tested, implemented code. Each reads the previous command's
 output and refuses to proceed past a gate it hasn't met — never guesses past
-a missing prerequisite. See `references/sdd-overview.md` first for the
-shared artifact layout and status model every command below follows.
+a missing prerequisite. Tests are written from the technical spec, *before*
+stories exist — stories don't invent acceptance criteria, they cite which
+already-written tests they're responsible for turning green. See
+`references/sdd-overview.md` first for the shared artifact layout and status
+model every command below follows.
 
 | Command | Reads | Writes | Loads |
 |---|---|---|---|
 | `klk-create-spec` | a feature description | `spec.md` | `references/sdd-create-spec.md` |
-| `klk-create-stories` | an approved `spec.md` | `stories.md` | `references/sdd-create-stories.md` |
-| `klk-create-qa` | stories with acceptance criteria | failing tests (red) | `references/sdd-create-qa.md` |
-| `klk-implement-stories` | stories with tests written | production code (green) | `references/sdd-implement-stories.md` |
+| `klk-create-tech-spec` | an approved `spec.md` | `tech-spec.md` (design + AC) | `references/sdd-create-tech-spec.md` |
+| `klk-create-tests` | an approved `tech-spec.md` | failing tests (red) + `tests.md` | `references/sdd-create-tests.md` |
+| `klk-create-stories` | `tests.md` | `stories.md` (task breakdown) | `references/sdd-create-stories.md` |
+| `klk-implement-stories` | stories ready for implementation | production code (green) | `references/sdd-implement-stories.md` |
 | `klk-run-qa` | implemented stories | test run report | `references/sdd-run-qa.md` |
 
-**Typical path**: `klk-create-spec` → `klk-create-stories` → `klk-create-qa`
-→ `klk-implement-stories` → `klk-run-qa`.
+**Typical path**: `klk-create-spec` → `klk-create-tech-spec` →
+`klk-create-tests` → `klk-create-stories` → `klk-implement-stories` →
+`klk-run-qa`.
 
 **Running it**: each command also works standalone (e.g. re-running
 `klk-run-qa` after a fix, or `klk-implement-stories` on one story at a time).
 To run the whole path as one pipeline, just ask for it (e.g. "run the full
 SDD workflow for X") — execute the commands in order, but stop and report at
-whichever command's gate fails (an unresolved `NEEDS CLARIFICATION`, a story
-missing acceptance criteria, a test still red) rather than forcing through
-to the next phase.
+whichever command's gate fails (an unresolved `NEEDS CLARIFICATION`, an AC
+with no recorded test, a story missing acceptance criteria) rather than
+forcing through to the next phase.
 
 Load only the reference file for the command actually invoked, plus
 `sdd-overview.md`.
+
+Gate checks and status updates in every command above run through
+`scripts/sdd_check.py` (slug derivation, `NEEDS CLARIFICATION` detection,
+AC-to-test coverage, story status/acceptance-criteria validation, and
+surgical status edits that refuse any illegal state-machine jump) — a
+script's exit code is the gate, not a by-eye read of the markdown. The
+script itself has a unit-test suite at `scripts/tests/test_sdd_check.py`
+(`python3 -m unittest discover -s scripts/tests`) — the gate logic that
+enforces this skill's testing discipline is itself held to it. See
+`sdd-overview.md` for which subcommand backs which gate.
 
 ## References — load only what the current task needs
 - `references/csharp-dotnet-practices.md` — C#/.NET/Blazor naming,

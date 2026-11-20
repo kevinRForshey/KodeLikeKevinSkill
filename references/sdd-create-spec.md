@@ -5,8 +5,9 @@ See `sdd-overview.md` for artifact layout and gates before using this file.
 **Input**: a plain-language feature description from the user.
 **Output**: `docs/sdd/<feature-slug>/spec.md`.
 
-1. Derive the feature slug from the description; create the directory if
-   this is a new feature. If `docs/sdd/<feature-slug>/` already exists,
+1. Derive the feature slug with
+   `python3 scripts/sdd_check.py slug "<description>"`; create the directory
+   if this is a new feature. If `docs/sdd/<feature-slug>/` already exists,
    this is a revision — read the existing `spec.md` first and update it
    rather than starting over.
 2. Fill this template from the description:
@@ -52,5 +53,9 @@ See `sdd-overview.md` for artifact layout and gates before using this file.
    honest-looking `spec.md` with `NEEDS CLARIFICATION` markers is correct
    output; a complete-looking one with guessed content is not.
 
+5. Run `python3 scripts/sdd_check.py gate-clarifications docs/sdd/<feature-slug>/spec.md`
+   and report its result directly — don't re-derive the list of open items
+   by eye when the script already produced it.
+
 Report back which REQ/SC items (if any) carry `NEEDS CLARIFICATION` — the
-user resolves those before `klk-create-stories` can run.
+user resolves those before `klk-create-tech-spec` can run.

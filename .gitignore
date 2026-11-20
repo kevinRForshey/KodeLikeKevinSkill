@@ -2,6 +2,10 @@
 .DS_Store
 Thumbs.db
 
+# Python bytecode cache from running scripts/sdd_check.py or its tests
+__pycache__/
+*.pyc
+
 # Editor/IDE
 .vscode/
 .idea/
@@ -20,3 +24,8 @@ Thumbs.db
 # they demonstrate the klk- pipeline without bloating the repo's history
 # with throwaway spec/story artifacts.
 docs/sdd/
+
+# examples/ holds the real source/tests backing a docs/sdd/ worked example
+# (kept outside docs/sdd/ itself, per sdd-overview.md's rule that real
+# project code doesn't belong there) — same disposable, untracked status.
+examples/
