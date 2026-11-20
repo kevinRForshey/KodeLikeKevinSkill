@@ -187,13 +187,18 @@ Load only the reference file for the command actually invoked, plus
 
 Gate checks and status updates in every command above run through
 `scripts/sdd_check.py` (slug derivation, `NEEDS CLARIFICATION` detection,
-AC-to-test coverage, story status/acceptance-criteria validation, and
-surgical status edits that refuse any illegal state-machine jump) — a
-script's exit code is the gate, not a by-eye read of the markdown. The
-script itself has a unit-test suite at `scripts/tests/test_sdd_check.py`
+REQ-to-TS/AC coverage, AC-to-test coverage, story status/acceptance-criteria
+validation, and surgical status edits that refuse any illegal
+state-machine jump) — a script's exit code is the gate, not a by-eye read
+of the markdown. The script itself has a unit-test suite at
+`scripts/tests/test_sdd_check.py`
 (`python3 -m unittest discover -s scripts/tests`) — the gate logic that
-enforces this skill's testing discipline is itself held to it. See
-`sdd-overview.md` for which subcommand backs which gate.
+enforces this skill's testing discipline is itself held to it. A project
+that wants these four gates enforced unconditionally, instead of relying
+on the model to actually invoke them, can wire `scripts/sdd_gate_hook.py`
+in as a `PreToolUse` hook — see `sdd-overview.md`'s "making the four
+mechanical gates unconditional" section. See `sdd-overview.md` for which
+subcommand backs which gate.
 
 ## References — load only what the current task needs
 - `references/csharp-dotnet-practices.md` — C#/.NET/Blazor naming,
