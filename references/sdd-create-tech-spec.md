@@ -58,9 +58,15 @@ will turn directly into tests. No test code and no production code here.
 5. Don't invent technical items or AC that don't trace back to a `REQ-*`.
    An honest-looking `tech-spec.md` with `NEEDS CLARIFICATION` markers is
    correct output; a complete-looking one with guessed content is not.
-6. Run `python3 scripts/sdd_check.py gate-clarifications docs/sdd/<feature-slug>/tech-spec.md`
+6. Run `python3 scripts/sdd_check.py gate-coverage docs/sdd/<feature-slug>/spec.md docs/sdd/<feature-slug>/tech-spec.md`.
+   **Refuse to report this command done on exit 1** — it means rule 3 above
+   wasn't actually satisfied; name the listed `REQ-*` and add the missing
+   `TS-*`/`AC-*` rather than reporting coverage you didn't mechanically
+   confirm.
+7. Run `python3 scripts/sdd_check.py gate-clarifications docs/sdd/<feature-slug>/tech-spec.md`
    and report its result directly.
 
 Report back the full `TS-*`/`AC-*` list, confirm every `spec.md` `REQ-*` is
-covered, and flag any `NEEDS CLARIFICATION` — the user resolves those before
-`klk-create-tests` can run.
+covered (per step 6's actual gate result, not a by-eye read), and flag any
+`NEEDS CLARIFICATION` — the user resolves those before `klk-create-tests`
+can run.

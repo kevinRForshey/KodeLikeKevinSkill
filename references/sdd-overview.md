@@ -77,12 +77,19 @@ claims.
 
 ## Gates — never guess past a missing prerequisite
 Every command starts by checking its required input is actually ready.
-Three of these checks are mechanical — run the script and treat its exit
+Four of these checks are mechanical — run the script and treat its exit
 code as the actual gate, not a read-it-and-judge-for-yourself step:
 - `python3 scripts/sdd_check.py gate-clarifications <spec.md|tech-spec.md>`
   — exits 1 and lists any unresolved `NEEDS CLARIFICATION` markers. Run
   before `klk-create-tech-spec` (against `spec.md`) and before
   `klk-create-tests` (against `tech-spec.md`).
+- `python3 scripts/sdd_check.py gate-coverage <spec.md> <tech-spec.md>` —
+  exits 1 if any `REQ-*` defined in `spec.md` isn't cited by at least one
+  `TS-*` and at least one `AC-*` in `tech-spec.md`'s bracket annotations.
+  Run at the end of `klk-create-tech-spec`, alongside its own
+  `gate-clarifications` check — this is what makes rule 3 in that
+  command's own reference file (every `REQ-*` covered) an actual gate
+  instead of a self-check the model can forget to run.
 - `python3 scripts/sdd_check.py gate-tests <tests.md> --acs <AC-IDs>` —
   exits 1 if `tests.md` is missing, or if any named `AC-*` has zero
   recorded test entries. Run before `klk-create-stories` for the AC(s) the
@@ -101,6 +108,41 @@ manual:
 When a gate isn't met (script exit 1, or a manual check fails), name exactly
 what's missing and stop — don't produce a document or code that looks
 complete to paper over the gap.
+
+### Optional: making the four mechanical gates unconditional
+The four `gate-*` commands above are only as real as the discipline of
+actually running them — nothing stops a model from writing `tech-spec.md`
+without first running `gate-clarifications` against `spec.md`. Projects
+that want the gate enforced regardless of whether it was invoked can wire
+`scripts/sdd_gate_hook.py` in as a `PreToolUse` hook in that project's
+`.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/scripts/sdd_gate_hook.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The hook reads the same `spec.md`/`tech-spec.md`/`tests.md` the `gate-*`
+commands read, and blocks (exit 2) a `Write`/`Edit` of
+`tech-spec.md`/`tests.md`/`stories.md` outright when that file's
+prerequisite gate isn't met — no agent compliance required. It's a no-op
+for every other file path, so enabling it doesn't affect unrelated work.
+This is opt-in rather than shipped on by default: it only applies within a
+project that adds it to its own `.claude/settings.json`, consistent with
+project conventions always winning over this skill's own defaults.
 
 ## Resolving a clarification gate and continuing
 When a command refuses because of a `NEEDS CLARIFICATION` marker (or any

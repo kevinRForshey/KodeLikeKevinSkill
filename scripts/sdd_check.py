@@ -19,6 +19,10 @@ Subcommands:
       exit 1 if tests.md is missing, or if any named AC-* has zero
       recorded test entries
 
+  gate-coverage <spec.md> <tech-spec.md>
+      exit 1 if any REQ-* defined in spec.md isn't cited by at least one
+      TS-* and at least one AC-* in tech-spec.md's bracket annotations
+
   gate-stories <stories.md> [--status S [S ...]] [--ids ID [ID ...]]
       print each story's status/AC count; exit 1 if --status given and
       any targeted story doesn't match, or has 0 AC
@@ -30,6 +34,8 @@ Subcommands:
       Failing: <reason> reachable from Implemented/Passing and
       recoverable back to Implemented/Passing)
 """
+from __future__ import annotations
+
 import argparse
 import re
 import sys
@@ -42,6 +48,9 @@ NEEDS_CLARIFICATION_RE = re.compile(
 )
 TESTS_AC_HEADER_RE = re.compile(r"^\s*-\s*\*\*(AC-\d+)\*\*")
 TESTS_TEST_LINE_RE = re.compile(r"^\s{2,}-\s*Test:")
+REQ_DEF_RE = re.compile(r"^\s*-\s*\*\*(REQ-\d+)\*\*:")
+TS_BRACKET_RE = re.compile(r"^\s*-\s*\*\*TS-\d+\*\*\s*\[([^\]]*)\]")
+AC_BRACKET_RE = re.compile(r"^\s*-\s*\*\*AC-\d+\*\*\s*\[([^\]]*)\]")
 
 STORY_STATUS_ORDER = ["Ready for Implementation", "Implemented", "Passing"]
 
@@ -102,7 +111,7 @@ def _find_open_clarifications(text: str) -> list[str]:
         # Markdown wraps long bullet text across lines; merge plain
         # continuation lines (not a new bullet/blank) into the question.
         for cont in lines[i + 1 :]:
-            if not cont.strip() or re.match(r"^\s*-\s*\*\*", cont):
+            if not cont.strip() or re.match(r"^\s*(#|-\s*\*\*)", cont):
                 break
             question += " " + cont.strip()
         open_items.append(f"{m.group(1)}: {question}")
@@ -110,7 +119,12 @@ def _find_open_clarifications(text: str) -> list[str]:
 
 
 def cmd_gate_clarifications(args: argparse.Namespace) -> int:
-    open_items = _find_open_clarifications(_read(args.path))
+    try:
+        text = _read(args.path)
+    except FileNotFoundError:
+        print(f"BLOCKED: no file found at {args.path}")
+        return 1
+    open_items = _find_open_clarifications(text)
     if open_items:
         print(f"BLOCKED: {len(open_items)} unresolved NEEDS CLARIFICATION item(s):")
         for item in open_items:
@@ -152,6 +166,59 @@ def cmd_gate_tests(args: argparse.Namespace) -> int:
     return 0
 
 
+def _parse_defined_req_ids(spec_text: str) -> list[str]:
+    """REQ-* ids actually defined (as a '- **REQ-NNN**:' bullet) in spec.md."""
+    ids = []
+    for line in spec_text.splitlines():
+        m = REQ_DEF_RE.match(line)
+        if m:
+            ids.append(m.group(1))
+    return ids
+
+
+def _parse_req_coverage(tech_spec_text: str) -> tuple[set[str], set[str]]:
+    """REQ-* ids cited in a TS-*'s bracket, and ids cited in an AC-*'s bracket."""
+    ts_covered: set[str] = set()
+    ac_covered: set[str] = set()
+    for line in tech_spec_text.splitlines():
+        m = TS_BRACKET_RE.match(line)
+        if m:
+            ts_covered.update(re.findall(r"REQ-\d+", m.group(1)))
+            continue
+        m = AC_BRACKET_RE.match(line)
+        if m:
+            ac_covered.update(re.findall(r"REQ-\d+", m.group(1)))
+    return ts_covered, ac_covered
+
+
+def cmd_gate_coverage(args: argparse.Namespace) -> int:
+    try:
+        spec_text = _read(args.spec_path)
+    except FileNotFoundError:
+        print(f"BLOCKED: no spec found at {args.spec_path}")
+        return 1
+    try:
+        tech_spec_text = _read(args.tech_spec_path)
+    except FileNotFoundError:
+        print(f"BLOCKED: no tech spec found at {args.tech_spec_path}")
+        return 1
+
+    reqs = _parse_defined_req_ids(spec_text)
+    if not reqs:
+        print(f"BLOCKED: no '**REQ-NNN**:' requirements found in {args.spec_path}")
+        return 1
+
+    ts_covered, ac_covered = _parse_req_coverage(tech_spec_text)
+    for r in reqs:
+        print(f"{r}: TS={'yes' if r in ts_covered else 'no'} AC={'yes' if r in ac_covered else 'no'}")
+    missing = [r for r in reqs if r not in ts_covered or r not in ac_covered]
+    if missing:
+        print(f"BLOCKED: not covered by >=1 TS-* and >=1 AC-*: {', '.join(missing)}")
+        return 1
+    print(f"OK: {len(reqs)} REQ(s) each covered by >=1 TS-* and >=1 AC-*")
+    return 0
+
+
 def _parse_stories(text: str) -> list[dict]:
     stories = []
     current = None
@@ -178,7 +245,11 @@ def _parse_stories(text: str) -> list[dict]:
 
 
 def cmd_gate_stories(args: argparse.Namespace) -> int:
-    text = _read(args.stories_path)
+    try:
+        text = _read(args.stories_path)
+    except FileNotFoundError:
+        print(f"BLOCKED: no stories file found at {args.stories_path}")
+        return 1
     stories = _parse_stories(text)
     if not stories:
         print(f"BLOCKED: no '## US-NNN:' story blocks found in {args.stories_path}")
@@ -215,7 +286,11 @@ def cmd_gate_stories(args: argparse.Namespace) -> int:
 
 def cmd_set_status(args: argparse.Namespace) -> int:
     path = args.stories_path
-    text = _read(path)
+    try:
+        text = _read(path)
+    except FileNotFoundError:
+        print(f"BLOCKED: no stories file found at {path}")
+        return 1
     lines = text.splitlines(keepends=True)
 
     block_start = None
@@ -266,6 +341,11 @@ def main() -> int:
     p.add_argument("tests_path")
     p.add_argument("--acs", nargs="+", required=True)
     p.set_defaults(func=cmd_gate_tests)
+
+    p = sub.add_parser("gate-coverage")
+    p.add_argument("spec_path")
+    p.add_argument("tech_spec_path")
+    p.set_defaults(func=cmd_gate_coverage)
 
     p = sub.add_parser("gate-stories")
     p.add_argument("stories_path")

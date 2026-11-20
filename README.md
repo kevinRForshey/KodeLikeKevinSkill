@@ -65,6 +65,12 @@ chained run still stops at the first unmet gate rather than forcing
 through. See `references/sdd-overview.md` for the shared artifact layout
 this whole lifecycle uses.
 
+The gate mechanism itself is language-agnostic by design — it parses only
+the planning markdown (`spec.md`/`tech-spec.md`/`tests.md`/`stories.md`),
+never source code — and has been exercised end-to-end via worked examples
+in both a backend (Python) and frontend (TypeScript/React) stack. It
+hasn't yet been run through a .NET/C# worked example specifically.
+
 ## What each file does
 
 - **`SKILL.md`** — The skill's entry point, kept deliberately lean since it
@@ -129,16 +135,33 @@ this whole lifecycle uses.
 - **`scripts/sdd_check.py`** — The deterministic gate logic every `klk-`
   command runs against, rather than eyeballing markdown: slug derivation,
   `NEEDS CLARIFICATION` detection (shared by `spec.md`/`tech-spec.md`),
-  AC-to-test coverage, story status/AC validation, and status edits that
-  refuse any transition that isn't a legal single step in the story status
-  machine. `scripts/tests/test_sdd_check.py` is its own unit-test suite
-  (`python3 -m unittest discover -s scripts/tests`) — the thing enforcing
-  this skill's testing discipline is itself held to it.
+  REQ-to-TS/AC coverage, AC-to-test coverage, story status/AC validation,
+  and status edits that refuse any transition that isn't a legal single
+  step in the story status machine. `scripts/tests/test_sdd_check.py` is
+  its own unit-test suite (`python3 -m unittest discover -s scripts/tests`)
+  — the thing enforcing this skill's testing discipline is itself held to
+  it, including CLI-level tests that invoke the script as a real
+  subprocess, not just its functions.
+
+- **`scripts/sdd_gate_hook.py`** — Optional `PreToolUse` hook that makes
+  the four mechanical gates above unconditional rather than dependent on
+  the model choosing to run them: wired into a project's own
+  `.claude/settings.json`, it blocks a `Write`/`Edit` of
+  `tech-spec.md`/`tests.md`/`stories.md` outright when that file's
+  prerequisite gate isn't met. See `references/sdd-overview.md`'s
+  "Optional: making the four mechanical gates unconditional" section for
+  the exact settings.json snippet. Its own tests
+  (`scripts/tests/test_sdd_gate_hook.py`) invoke it the same way Claude
+  Code does — JSON piped to stdin — not just its functions directly.
+
+- **`.github/workflows/test.yml`** — Runs that same unit-test suite on every
+  push/PR, against Python 3.9 and 3.12, so a regression in the gate script
+  can't land silently.
 
 - **`LICENSE`** — Apache License 2.0 covering this skill's contents.
 
 - **`.gitignore`** — Excludes OS/editor cruft, the disposable
   `.superpowers/sdd/` scratch workspace created when a plan is executed with
   the `subagent-driven-development` skill in this repo, and the `docs/sdd/`
-  worked examples (kept on disk for validation, untracked so they don't
-  bloat history).
+  worked examples plus their real backing code under `examples/` (both kept
+  on disk for validation, untracked so they don't bloat history).

@@ -5,6 +5,8 @@ Run: python3 -m unittest discover -s scripts/tests
 """
 import importlib.util
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -62,6 +64,15 @@ class ClarificationGateTests(unittest.TestCase):
         self.assertEqual(len(items), 1)
         self.assertIn("Profile fields or order history?", items[0])
 
+    def test_continuation_merge_stops_at_heading_with_no_blank_line(self):
+        text = (
+            "- **REQ-001**: NEEDS CLARIFICATION: which users?\n"
+            "## Constraints\n"
+            "- **CON-001**: fine.\n"
+        )
+        items = sdd_check._find_open_clarifications(text)
+        self.assertEqual(items, ["REQ-001: which users?"])
+
     def test_gate_clarifications_cli_exit_codes(self):
         import argparse
 
@@ -77,6 +88,136 @@ class ClarificationGateTests(unittest.TestCase):
         finally:
             os.remove(clean)
             os.remove(blocked)
+
+    def test_gate_clarifications_missing_file_blocks_cleanly(self):
+        import argparse
+
+        rc = sdd_check.cmd_gate_clarifications(
+            argparse.Namespace(path="/no/such/spec.md")
+        )
+        self.assertEqual(rc, 1)
+
+
+class CoverageGateTests(unittest.TestCase):
+    SPEC = (
+        "## Functional Requirements\n"
+        "- **REQ-001**: Users can log in.\n"
+        "- **REQ-002**: Sessions expire.\n"
+    )
+    TECH_SPEC_FULL = (
+        "## Technical design items\n"
+        "- **TS-001** [REQ-001]: Login endpoint.\n"
+        "- **TS-002** [REQ-002]: Expiry job.\n"
+        "## Acceptance criteria\n"
+        "- **AC-1** [REQ-001/TS-001]: Given X, when Y, then Z.\n"
+        "- **AC-2** [REQ-002/TS-002]: Given X, when Y, then Z.\n"
+    )
+    TECH_SPEC_MISSING_AC = (
+        "## Technical design items\n"
+        "- **TS-001** [REQ-001]: Login endpoint.\n"
+        "- **TS-002** [REQ-002]: Expiry job.\n"
+        "## Acceptance criteria\n"
+        "- **AC-1** [REQ-001/TS-001]: Given X, when Y, then Z.\n"
+    )
+    TECH_SPEC_MISSING_TS = (
+        "## Acceptance criteria\n"
+        "- **AC-1** [REQ-001]: Given X, when Y, then Z.\n"
+        "- **AC-2** [REQ-002]: Given X, when Y, then Z.\n"
+    )
+
+    def test_parses_defined_req_ids(self):
+        self.assertEqual(
+            sdd_check._parse_defined_req_ids(self.SPEC), ["REQ-001", "REQ-002"]
+        )
+
+    def test_parses_ts_and_ac_coverage_separately(self):
+        ts_covered, ac_covered = sdd_check._parse_req_coverage(
+            self.TECH_SPEC_MISSING_AC
+        )
+        self.assertEqual(ts_covered, {"REQ-001", "REQ-002"})
+        self.assertEqual(ac_covered, {"REQ-001"})
+
+    def test_gate_passes_when_every_req_has_ts_and_ac(self):
+        import argparse
+
+        spec = write_tmp(self.SPEC)
+        tech = write_tmp(self.TECH_SPEC_FULL)
+        try:
+            rc = sdd_check.cmd_gate_coverage(
+                argparse.Namespace(spec_path=spec, tech_spec_path=tech)
+            )
+            self.assertEqual(rc, 0)
+        finally:
+            os.remove(spec)
+            os.remove(tech)
+
+    def test_gate_blocks_when_a_req_has_no_ac(self):
+        import argparse
+
+        spec = write_tmp(self.SPEC)
+        tech = write_tmp(self.TECH_SPEC_MISSING_AC)
+        try:
+            rc = sdd_check.cmd_gate_coverage(
+                argparse.Namespace(spec_path=spec, tech_spec_path=tech)
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(spec)
+            os.remove(tech)
+
+    def test_gate_blocks_when_a_req_has_no_ts(self):
+        import argparse
+
+        spec = write_tmp(self.SPEC)
+        tech = write_tmp(self.TECH_SPEC_MISSING_TS)
+        try:
+            rc = sdd_check.cmd_gate_coverage(
+                argparse.Namespace(spec_path=spec, tech_spec_path=tech)
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(spec)
+            os.remove(tech)
+
+    def test_gate_blocks_on_missing_spec_file(self):
+        import argparse
+
+        tech = write_tmp(self.TECH_SPEC_FULL)
+        try:
+            rc = sdd_check.cmd_gate_coverage(
+                argparse.Namespace(spec_path="/no/such/spec.md", tech_spec_path=tech)
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(tech)
+
+    def test_gate_blocks_on_missing_tech_spec_file(self):
+        import argparse
+
+        spec = write_tmp(self.SPEC)
+        try:
+            rc = sdd_check.cmd_gate_coverage(
+                argparse.Namespace(
+                    spec_path=spec, tech_spec_path="/no/such/tech-spec.md"
+                )
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(spec)
+
+    def test_gate_blocks_on_spec_with_no_req_bullets(self):
+        import argparse
+
+        spec = write_tmp("## Functional Requirements\n<nothing yet>\n")
+        tech = write_tmp(self.TECH_SPEC_FULL)
+        try:
+            rc = sdd_check.cmd_gate_coverage(
+                argparse.Namespace(spec_path=spec, tech_spec_path=tech)
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(spec)
+            os.remove(tech)
 
 
 class TestsManifestGateTests(unittest.TestCase):
@@ -203,6 +344,14 @@ class StoriesGateTests(unittest.TestCase):
         finally:
             os.remove(path)
 
+    def test_gate_stories_missing_file_blocks_cleanly(self):
+        import argparse
+
+        rc = sdd_check.cmd_gate_stories(
+            argparse.Namespace(stories_path="/no/such/stories.md", ids=None, status=None)
+        )
+        self.assertEqual(rc, 1)
+
 
 class TransitionValidationTests(unittest.TestCase):
     def test_legal_forward_steps_allowed(self):
@@ -317,6 +466,112 @@ class SetStatusCliTests(unittest.TestCase):
             self.assertEqual(rc, 1)
         finally:
             os.remove(path)
+
+    def test_set_status_missing_file_blocks_cleanly(self):
+        import argparse
+
+        rc = sdd_check.cmd_set_status(
+            argparse.Namespace(
+                stories_path="/no/such/stories.md",
+                story_id="US-001",
+                new_status="Implemented",
+            )
+        )
+        self.assertEqual(rc, 1)
+
+
+def run_cli(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, SDD_CHECK_PATH, *args],
+        capture_output=True,
+        text=True,
+    )
+
+
+class CliSubprocessTests(unittest.TestCase):
+    """Every test above calls cmd_* directly with a hand-built Namespace,
+    which never exercises argparse itself — a wrong dest/flag/nargs in
+    main()'s subparsers would pass every one of those tests and still
+    break the real CLI. These invoke the script as a real subprocess
+    through its actual argv/argparse wiring."""
+
+    def test_slug_cli(self):
+        result = run_cli("slug", "Cancel an Order!! (v2)")
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.strip(), "cancel-an-order-v2")
+
+    def test_gate_clarifications_cli_blocks(self):
+        path = write_tmp("- **REQ-001**: NEEDS CLARIFICATION: eh?\n")
+        try:
+            result = run_cli("gate-clarifications", path)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("REQ-001", result.stdout)
+        finally:
+            os.remove(path)
+
+    def test_gate_tests_cli_passes(self):
+        path = write_tmp(
+            "- **AC-1** [REQ-001]: Given X, when Y, then Z.\n"
+            "  - Test: `tests/Foo.cs::Does_X` — red\n"
+        )
+        try:
+            result = run_cli("gate-tests", path, "--acs", "AC-1")
+            self.assertEqual(result.returncode, 0)
+        finally:
+            os.remove(path)
+
+    def test_gate_stories_cli_blocks_on_unknown_id(self):
+        path = write_tmp("## US-001: First\n- **Status**: Ready for Implementation\n")
+        try:
+            result = run_cli("gate-stories", path, "--ids", "US-999")
+            self.assertEqual(result.returncode, 1)
+        finally:
+            os.remove(path)
+
+    def test_set_status_cli_rewrites_file(self):
+        path = write_tmp("## US-001: First\n- **Status**: Ready for Implementation\n")
+        try:
+            result = run_cli("set-status", path, "US-001", "Implemented")
+            self.assertEqual(result.returncode, 0)
+            with open(path) as f:
+                self.assertIn("**Status**: Implemented", f.read())
+        finally:
+            os.remove(path)
+
+    def test_missing_subcommand_is_a_usage_error(self):
+        result = run_cli()
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_gate_coverage_cli_passes(self):
+        spec = write_tmp("- **REQ-001**: Users can log in.\n")
+        tech = write_tmp(
+            "- **TS-001** [REQ-001]: Login endpoint.\n"
+            "- **AC-1** [REQ-001/TS-001]: Given X, when Y, then Z.\n"
+        )
+        try:
+            result = run_cli("gate-coverage", spec, tech)
+            self.assertEqual(result.returncode, 0)
+        finally:
+            os.remove(spec)
+            os.remove(tech)
+
+    def test_gate_clarifications_cli_missing_file_has_no_traceback(self):
+        result = run_cli("gate-clarifications", "/no/such/spec.md")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stderr, "")
+        self.assertIn("BLOCKED", result.stdout)
+
+    def test_gate_stories_cli_missing_file_has_no_traceback(self):
+        result = run_cli("gate-stories", "/no/such/stories.md")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stderr, "")
+        self.assertIn("BLOCKED", result.stdout)
+
+    def test_set_status_cli_missing_file_has_no_traceback(self):
+        result = run_cli("set-status", "/no/such/stories.md", "US-001", "Implemented")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stderr, "")
+        self.assertIn("BLOCKED", result.stdout)
 
 
 if __name__ == "__main__":
