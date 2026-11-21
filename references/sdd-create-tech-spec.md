@@ -29,16 +29,15 @@ will turn directly into tests. No test code and no production code here.
    existed.>
 
    ## Technical design items
-   - **TS-001**: <a concrete technical decision — a data model/schema
-     change, an interface/contract, a component boundary> — implements
-     REQ-00N.
-   - **TS-002**: <...> — implements REQ-00N.
+   - **TS-001** [REQ-00N]: <a concrete technical decision — a data
+     model/schema change, an interface/contract, a component boundary>.
+   - **TS-002** [REQ-00N]: <...>.
 
    ## Acceptance criteria
-   - **AC-1**: Given <context>, when <action>, then <observable outcome>.
-     — implements REQ-00N / TS-00N.
-   - **AC-2**: Given <context>, when <action>, then <observable outcome>.
-     — implements REQ-00N / TS-00N.
+   - **AC-1** [REQ-00N/TS-00N]: Given <context>, when <action>, then
+     <observable outcome>.
+   - **AC-2** [REQ-00N/TS-00N]: Given <context>, when <action>, then
+     <observable outcome>.
 
    ## Non-functional notes
    <Only if the spec's CON-* items imply a technical consequence —

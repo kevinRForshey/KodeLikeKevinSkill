@@ -353,6 +353,167 @@ class StoriesGateTests(unittest.TestCase):
         self.assertEqual(rc, 1)
 
 
+class ShipGateTests(unittest.TestCase):
+    TECH_SPEC = (
+        "## Acceptance criteria\n"
+        "- **AC-1** [REQ-001/TS-001]: Given X, when Y, then Z.\n"
+        "- **AC-2** [REQ-002/TS-002]: Given A, when B, then C.\n"
+    )
+    STORIES_ALL_PASSING = (
+        "## US-001: First story\n"
+        "- **Covers**: AC-1 (REQ-001/TS-001)\n"
+        "- **Status**: Passing\n"
+        "## US-002: Second story\n"
+        "- **Covers**: AC-2 (REQ-002/TS-002)\n"
+        "- **Status**: Passing\n"
+    )
+    STORIES_ONE_NOT_PASSING = (
+        "## US-001: First story\n"
+        "- **Covers**: AC-1 (REQ-001/TS-001)\n"
+        "- **Status**: Passing\n"
+        "## US-002: Second story\n"
+        "- **Covers**: AC-2 (REQ-002/TS-002)\n"
+        "- **Status**: Implemented\n"
+    )
+    STORIES_MISSING_AC_COVERAGE = (
+        "## US-001: First story\n"
+        "- **Covers**: AC-1 (REQ-001/TS-001)\n"
+        "- **Status**: Passing\n"
+    )
+
+    def test_parses_covers_line_into_ac_set(self):
+        stories = sdd_check._parse_stories(self.STORIES_ALL_PASSING)
+        self.assertEqual(stories[0]["covers_ac"], {"AC-1"})
+        self.assertEqual(stories[1]["covers_ac"], {"AC-2"})
+
+    def test_parses_defined_ac_ids_from_tech_spec(self):
+        self.assertEqual(
+            sdd_check._parse_defined_ac_ids(self.TECH_SPEC), ["AC-1", "AC-2"]
+        )
+
+    def test_gate_passes_when_every_ac_covered_and_all_passing(self):
+        import argparse
+
+        tech = write_tmp(self.TECH_SPEC)
+        stories = write_tmp(self.STORIES_ALL_PASSING)
+        try:
+            rc = sdd_check.cmd_gate_ship(
+                argparse.Namespace(tech_spec_path=tech, stories_path=stories, ids=None)
+            )
+            self.assertEqual(rc, 0)
+        finally:
+            os.remove(tech)
+            os.remove(stories)
+
+    def test_gate_blocks_when_a_story_is_not_passing(self):
+        import argparse
+
+        tech = write_tmp(self.TECH_SPEC)
+        stories = write_tmp(self.STORIES_ONE_NOT_PASSING)
+        try:
+            rc = sdd_check.cmd_gate_ship(
+                argparse.Namespace(tech_spec_path=tech, stories_path=stories, ids=None)
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(tech)
+            os.remove(stories)
+
+    def test_gate_blocks_whole_feature_ship_when_an_ac_has_no_story(self):
+        import argparse
+
+        tech = write_tmp(self.TECH_SPEC)
+        stories = write_tmp(self.STORIES_MISSING_AC_COVERAGE)
+        try:
+            rc = sdd_check.cmd_gate_ship(
+                argparse.Namespace(tech_spec_path=tech, stories_path=stories, ids=None)
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(tech)
+            os.remove(stories)
+
+    def test_partial_ship_with_ids_skips_whole_feature_ac_closure(self):
+        import argparse
+
+        # AC-2 has no story at all, but we only target US-001 (AC-1) —
+        # a partial ship shouldn't be blocked by an AC outside its scope.
+        tech = write_tmp(self.TECH_SPEC)
+        stories = write_tmp(self.STORIES_MISSING_AC_COVERAGE)
+        try:
+            rc = sdd_check.cmd_gate_ship(
+                argparse.Namespace(
+                    tech_spec_path=tech, stories_path=stories, ids=["US-001"]
+                )
+            )
+            self.assertEqual(rc, 0)
+        finally:
+            os.remove(tech)
+            os.remove(stories)
+
+    def test_gate_blocks_on_unknown_targeted_id(self):
+        import argparse
+
+        tech = write_tmp(self.TECH_SPEC)
+        stories = write_tmp(self.STORIES_ALL_PASSING)
+        try:
+            rc = sdd_check.cmd_gate_ship(
+                argparse.Namespace(
+                    tech_spec_path=tech, stories_path=stories, ids=["US-999"]
+                )
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(tech)
+            os.remove(stories)
+
+    def test_gate_blocks_on_missing_tech_spec(self):
+        import argparse
+
+        stories = write_tmp(self.STORIES_ALL_PASSING)
+        try:
+            rc = sdd_check.cmd_gate_ship(
+                argparse.Namespace(
+                    tech_spec_path="/no/such/tech-spec.md",
+                    stories_path=stories,
+                    ids=None,
+                )
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(stories)
+
+    def test_gate_blocks_on_missing_stories_file(self):
+        import argparse
+
+        tech = write_tmp(self.TECH_SPEC)
+        try:
+            rc = sdd_check.cmd_gate_ship(
+                argparse.Namespace(
+                    tech_spec_path=tech,
+                    stories_path="/no/such/stories.md",
+                    ids=None,
+                )
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(tech)
+
+    def test_gate_blocks_on_tech_spec_with_no_ac_bullets(self):
+        import argparse
+
+        tech = write_tmp("## Acceptance criteria\n<nothing yet>\n")
+        stories = write_tmp(self.STORIES_ALL_PASSING)
+        try:
+            rc = sdd_check.cmd_gate_ship(
+                argparse.Namespace(tech_spec_path=tech, stories_path=stories, ids=None)
+            )
+            self.assertEqual(rc, 1)
+        finally:
+            os.remove(tech)
+            os.remove(stories)
+
+
 class TransitionValidationTests(unittest.TestCase):
     def test_legal_forward_steps_allowed(self):
         self.assertIsNone(
@@ -563,6 +724,42 @@ class CliSubprocessTests(unittest.TestCase):
 
     def test_gate_stories_cli_missing_file_has_no_traceback(self):
         result = run_cli("gate-stories", "/no/such/stories.md")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stderr, "")
+        self.assertIn("BLOCKED", result.stdout)
+
+    def test_gate_ship_cli_passes_when_all_passing_and_covered(self):
+        tech = write_tmp("- **AC-1** [REQ-001/TS-001]: Given X, when Y, then Z.\n")
+        stories = write_tmp(
+            "## US-001: First\n"
+            "- **Covers**: AC-1 (REQ-001/TS-001)\n"
+            "- **Status**: Passing\n"
+        )
+        try:
+            result = run_cli("gate-ship", tech, stories)
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("ready to ship", result.stdout)
+        finally:
+            os.remove(tech)
+            os.remove(stories)
+
+    def test_gate_ship_cli_blocks_on_story_not_passing(self):
+        tech = write_tmp("- **AC-1** [REQ-001/TS-001]: Given X, when Y, then Z.\n")
+        stories = write_tmp(
+            "## US-001: First\n"
+            "- **Covers**: AC-1 (REQ-001/TS-001)\n"
+            "- **Status**: Implemented\n"
+        )
+        try:
+            result = run_cli("gate-ship", tech, stories)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("not Passing", result.stdout)
+        finally:
+            os.remove(tech)
+            os.remove(stories)
+
+    def test_gate_ship_cli_missing_file_has_no_traceback(self):
+        result = run_cli("gate-ship", "/no/such/tech-spec.md", "/no/such/stories.md")
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stderr, "")
         self.assertIn("BLOCKED", result.stdout)

@@ -46,15 +46,17 @@ applies on top of those specifically for .NET work.
 
 ## Spec-driven development commands
 
-Six `klk-`prefixed commands carry a feature from a plain-language
-description to tested, implemented code: `klk-create-spec` →
+Seven `klk-`prefixed commands carry a feature from a plain-language
+description to a ready-to-review PR: `klk-create-spec` →
 `klk-create-tech-spec` → `klk-create-tests` → `klk-create-stories` →
-`klk-implement-stories` → `klk-run-qa`. The load-bearing design choice:
-tests are written from the technical spec, *before* stories exist — the
-Definition of Done (`tests.md`) is fixed before any task breakdown happens,
-so later story-writing can't quietly redefine what "done" means. Stories
-cite which already-written tests they're responsible for turning green
-rather than inventing their own acceptance criteria.
+`klk-implement-stories` → `klk-run-qa` → `klk-ship`. The load-bearing design
+choice: tests are written from the technical spec, *before* stories exist —
+the Definition of Done (`tests.md`) is fixed before any task breakdown
+happens, so later story-writing can't quietly redefine what "done" means.
+Stories cite which already-written tests they're responsible for turning
+green rather than inventing their own acceptance criteria. The pipeline
+stops at a staged, traceable PR draft — `klk-ship` never commits or pushes;
+that stays the user's call, per this skill's version-control policy.
 
 Each command reads the previous one's output and refuses to advance past a
 gate it hasn't actually met (an unresolved ambiguity, an AC with no test
@@ -118,38 +120,42 @@ hasn't yet been run through a .NET/C# worked example specifically.
 
 - **`references/sdd-overview.md`** — Loaded once per SDD command
   invocation. The shared artifact layout (`docs/sdd/<feature-slug>/`:
-  `spec.md` → `tech-spec.md` → `tests.md` → `stories.md`), the story status
-  model (`Ready for Implementation` → `Implemented` → `Passing`),
-  and the gate/traceability rules all six `klk-` commands follow.
+  `spec.md` → `tech-spec.md` → `tests.md` → `stories.md` →
+  `pr-description.md`), the story status model (`Ready for Implementation`
+  → `Implemented` → `Passing`), and the gate/traceability rules all seven
+  `klk-` commands follow.
 
 - **`references/sdd-create-spec.md`**, **`sdd-create-tech-spec.md`**,
   **`sdd-create-tests.md`**, **`sdd-create-stories.md`**,
-  **`sdd-implement-stories.md`**, **`sdd-run-qa.md`** — One file per `klk-`
-  command, loaded on demand for the command actually invoked: a plain
-  description into `spec.md`; `spec.md` into `tech-spec.md` (the technical
-  design plus acceptance criteria); `tech-spec.md`'s acceptance criteria
-  into failing tests and `tests.md` (the Definition of Done); `tests.md`
-  into an implementation-sized `stories.md` breakdown; stories into passing
-  code; and a real test run into each story's final status.
+  **`sdd-implement-stories.md`**, **`sdd-run-qa.md`**, **`sdd-ship.md`** —
+  One file per `klk-` command, loaded on demand for the command actually
+  invoked: a plain description into `spec.md`; `spec.md` into `tech-spec.md`
+  (the technical design plus acceptance criteria); `tech-spec.md`'s
+  acceptance criteria into failing tests and `tests.md` (the Definition of
+  Done); `tests.md` into an implementation-sized `stories.md` breakdown;
+  stories into passing code; a real test run into each story's final
+  status; and, once every story is `Passing`, a traceable `pr-description.md`
+  draft plus a staged (never committed) diff.
 
 - **`scripts/sdd_check.py`** — The deterministic gate logic every `klk-`
   command runs against, rather than eyeballing markdown: slug derivation,
   `NEEDS CLARIFICATION` detection (shared by `spec.md`/`tech-spec.md`),
-  REQ-to-TS/AC coverage, AC-to-test coverage, story status/AC validation,
-  and status edits that refuse any transition that isn't a legal single
-  step in the story status machine. `scripts/tests/test_sdd_check.py` is
-  its own unit-test suite (`python3 -m unittest discover -s scripts/tests`)
-  — the thing enforcing this skill's testing discipline is itself held to
-  it, including CLI-level tests that invoke the script as a real
-  subprocess, not just its functions.
+  REQ-to-TS/AC coverage, AC-to-test coverage, AC-to-story coverage, story
+  status/AC validation, and status edits that refuse any transition that
+  isn't a legal single step in the story status machine.
+  `scripts/tests/test_sdd_check.py` is its own unit-test suite
+  (`python3 -m unittest discover -s scripts/tests`) — the thing enforcing
+  this skill's testing discipline is itself held to it, including
+  CLI-level tests that invoke the script as a real subprocess, not just
+  its functions.
 
 - **`scripts/sdd_gate_hook.py`** — Optional `PreToolUse` hook that makes
-  the four mechanical gates above unconditional rather than dependent on
+  the five mechanical gates above unconditional rather than dependent on
   the model choosing to run them: wired into a project's own
   `.claude/settings.json`, it blocks a `Write`/`Edit` of
-  `tech-spec.md`/`tests.md`/`stories.md` outright when that file's
-  prerequisite gate isn't met. See `references/sdd-overview.md`'s
-  "Optional: making the four mechanical gates unconditional" section for
+  `tech-spec.md`/`tests.md`/`stories.md`/`pr-description.md` outright when
+  that file's prerequisite gate isn't met. See `references/sdd-overview.md`'s
+  "Optional: making the five mechanical gates unconditional" section for
   the exact settings.json snippet. Its own tests
   (`scripts/tests/test_sdd_gate_hook.py`) invoke it the same way Claude
   Code does — JSON piped to stdin — not just its functions directly.
