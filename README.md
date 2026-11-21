@@ -70,8 +70,10 @@ this whole lifecycle uses.
 The gate mechanism itself is language-agnostic by design — it parses only
 the planning markdown (`spec.md`/`tech-spec.md`/`tests.md`/`stories.md`),
 never source code — and has been exercised end-to-end via worked examples
-in both a backend (Python) and frontend (TypeScript/React) stack. It
-hasn't yet been run through a .NET/C# worked example specifically.
+in a backend (Python) stack, a frontend (TypeScript/React) stack, and a
+.NET/C# stack (a Repository-pattern service with a `record`-based DTO,
+nullable-aware rule lookup, and real `dotnet test` runs confirming each
+test red before the implementation existed and green after).
 
 ## What each file does
 
