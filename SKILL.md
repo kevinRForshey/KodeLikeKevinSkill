@@ -1,214 +1,59 @@
 ---
-name: KodeLikeKevinSkill
-description: Kevin's all-in-one personal engineering conventions and workflow — applies to every software engineering task in any language, with full depth for .NET (C#/Blazor), Node.js/TypeScript/React/JavaScript/HTML, and Python. Use for writing, editing, reviewing, or scaffolding any code — class libraries, UI components, data access layers, APIs, scripts, unit tests, in any language — and for the senior-engineer workflow around it: planning before non-trivial changes, validating before calling something done, direct/non-agreeable feedback, SOLID/YAGNI discipline, documentation and code-attribution requirements, and token-conscious work habits. Also use for any question about naming, idiomatic style, project layout, or best practices in any language, even a quick one-off question with no file being written or edited yet — don't wait for an explicit "write/edit this file" request before applying it. Also use whenever the user invokes a klk-prefixed spec-driven-development command (klk-create-spec, klk-create-tech-spec, klk-create-tests, klk-create-stories, klk-implement-stories, klk-run-qa, klk-ship), or asks to run the full SDD pipeline for a feature.
+name: kode-like-kevin-dotnet
+description:  .NET (C#, Blazor, ASP.NET Core) engineering conventions and klk-prefixed spec-driven development (SDD) workflow. Use when writing, editing, reviewing, or scaffolding .NET code or tests, enforcing SOLID/YAGNI/Repository conventions, or running klk-* SDD commands (klk-create-spec, klk-create-tech-spec, klk-create-tests, klk-create-stories, klk-implement-stories, klk-run-qa, klk-ship).
 ---
 
-# Full-Stack Coding Conventions (.NET, Node/TS/React, Python)
+# .NET Engineering Conventions & SDD Workflow
 
-Apply to all .NET, Node.js/TypeScript/React/JavaScript/HTML, and Python work
-unless a project's own conventions (its CLAUDE.md or a project-scoped skill)
-say otherwise — project-level conventions always win.
+Apply to C#, Blazor (`.razor`), ASP.NET Core, and `.csproj`/`.sln` work unless the repository's `CLAUDE.md` or a project-scoped skill specifies otherwise (project-level conventions always win).
 
-## Use this skill when
-- Writing or editing C#, Blazor, `.razor`, or `.csproj` files.
-- Writing or editing TypeScript, JavaScript, React (`.tsx`/`.jsx`), or HTML
-  files, or working in a Node.js (`package.json`-based) project.
-- Writing or editing Python (`.py`, `pyproject.toml`) files.
-- Scaffolding or reviewing code in any of the above.
-- Running a `klk-`prefixed SDD command, or taking a feature from a plain
-  description through spec, stories, tests, and implementation.
+## Routing & Scope
+- **Defer to specialized skills naturally:** Do not preload specialized .NET skills upfront. Only load them when the active file or task specifically requires them.
+- **Compete check:** If the target repo already has a `.specify` scaffold and an installed spec-kit lifecycle skill (such as `mds-` commands), defer to that instead of `klk-` commands.
+- **Process governance (`ai-governance`):** Apply `ai-governance` alongside this skill without duplicating work:
+  - Approved `tech-spec.md` + `stories.md` artifacts satisfy **Gate 0 (Analyze & Plan)**—do not re-plan per story during `klk-implement-stories`.
+  - Run coverage-tool verification (**Gate 1 / Gate 3: 90% floor via exit code**) once in `klk-run-qa` (or final verification), not after every individual story edit.
 
-## Reach for another skill when
-- None of the languages/ecosystems above are involved.
-- A project-scoped skill or CLAUDE.md defines conflicting conventions — defer
-  to those.
-- For C#/.NET specifics (async, EF Core, testing frameworks, minimal
-  API/OpenAPI, XML docs), defer to the installed specialized skills
-  (csharp-async, efcore-mssql, dotnet-testing, aspnet-minimal-api-openapi,
-  csharp-docs, dotnet-best-practices) rather than this one. No equivalent
-  specialized skills are installed yet for TypeScript/Node/React or Python,
-  so this skill owns those conventions directly.
-- For .NET/C#, React, Python, or TypeScript work, *process* (analyze-before-
-  edit planning, the 90% test-coverage floor, build/test/coverage
-  verification, security/autonomy tiers) is owned by the installed
-  `ai-governance` skill, not this one — apply both together: `ai-governance`
-  for process, this skill for style/convention and the `klk-` SDD lifecycle.
-- The target repo already has a `.specify`/spec-kit scaffold and an
-  installed spec-kit-aware lifecycle skill (e.g. `MyndTek-Development-Skill`'s
-  `mds-` commands) — defer to that instead of this skill's `klk-` commands to
-  avoid two competing SDD systems in the same repo. This skill's `klk-`
-  commands are the lightweight alternative for repos without that scaffold.
-- The user wants a standalone specification document — schema, tool, data,
-  infrastructure, process, architecture, or design — with no intent to run
-  it through the `klk-` stories/tests/implementation lifecycle. Use the
-  installed `create-specification` skill's `/spec/spec-*.md` format for
-  that instead. Use `klk-create-spec` only when the spec is step one of
-  actually running this skill's SDD lifecycle for a feature.
-- The code touches PHI or other sensitive health data — defer to the
-  installed `phi-secure-csharp`/`phi-security-review`/`phi-dapper-dal`/
-  `phi-deidentification` skills for the actual handling rules; still flag
-  PHI touching logs, error messages, or third-party calls as a real
-  correctness issue per `## Working style` above, not a nice-to-have.
+## Version Control Policy
+Never run `git commit` or `git push` unless explicitly requested for that specific action in the current turn. Read-only inspection (`status`, `diff`, `log`), staging, and local branching do not require asking. Approval is scoped to the requested action only—never treat it as standing permission.
 
-## Version control policy
-Never run `git commit` or `git push` unless the user explicitly asks for that
-specific action in this conversation. Status/diff/log, staging, and branching
-don't require asking. Approval isn't retroactive — each commit/push is scoped
-to what was asked, not a standing permission.
+## Token & Context Discipline
+- **One SDD phase per session:** Never run all seven `klk-` commands in a single continuous thread. Persist state to disk (`spec.md`, `tech-spec.md`, `tests.md`, `stories.md`), validate via `scripts/sdd_check.py`, and stop at the phase boundary so the user can `/clear` (or run the next stage in a fresh session).
+- **Load references on demand:** Read only the single reference file matching the active `klk-` command or `references/csharp-dotnet-practices.md` when needed.
+- **Targeted reads & edits:** Grep for types, symbols, or methods before opening large files; never re-read a file already in context unless modified externally; make minimal targeted edits over full-file rewrites.
+- **Compress `.NET` CLI output:** Never dump full `dotnet build`, `dotnet test`, or coverage logs into context—surface only compiler errors, failing test assertions, and exit codes, and reuse `--no-restore` / `--no-build` during iterative inner loops when appropriate.
+- **No speculative subagents:** Reserve subagents for broad multi-project investigations; never spawn subagents for single-file lookups or routine story implementation.
+- **Clean scratch artifacts:** Remove temporary debug logs, commented-out code, and unused usings/helpers before finishing.
 
-## Token efficiency
-Work in a way that conserves tokens — a finite budget:
-- Don't re-read a file already in context; trust prior tool output unless it
-  may be stale.
-- Prefer targeted edits over rewriting whole files.
-- Grep/search for the specific symbol or section instead of reading an entire
-  large file when only part of it is relevant.
-- Batch independent read-only operations instead of issuing them one at a
-  time across turns.
-- Load only the reference file(s) below relevant to the language actually in
-  play — never all of them for a single-language task.
-- Keep explanations concise; skip speculative exploration the task doesn't
-  need.
-- Don't paste large tool outputs (build logs, test runs, full file dumps)
-  verbatim — quote only the failing/relevant lines and summarize the rest.
-- Reserve subagents/parallel exploration for genuinely broad or multi-part
-  investigations; a single direct read or grep doesn't need one.
-- Strip scratch/debug artifacts (temporary logging, commented-out attempts,
-  dead code) before presenting a solution as done — they cost tokens on
-  every future read of the file.
+## .NET Engineering Principles & Working Style
+- **KISS & YAGNI:** Favor straightforward C# over cleverness, deep inheritance hierarchies, or speculative abstractions. Every class, interface, method, and parameter must serve the current task.
+- **SOLID (SRP first):** Introduce interfaces or extra layers only when there is a concrete need, testability boundary, or proven pain point—not by default.
+- **Direct, non-agreeable feedback:** Flag performance, memory/allocation, security, threading/async, or maintainability issues *before* editing. State tradeoffs clearly and pick an option; skip unearned praise and push back on scope creep.
+- **Data access:** Isolate persistence behind the **Repository pattern** with intent-revealing methods; do not leak `IQueryable<T>` or raw ORM query objects across service/business boundaries.
+- **Testing:** Add unit/integration tests covering happy paths and guard/failure cases using the test framework already present in the solution (defaulting to xUnit only when no test project exists).
 
-These rules govern *how* work gets done — they never justify skipping a
-required deliverable (tests, docs, attribution) defined elsewhere here.
+## Documentation & Attribution
+- **Public APIs:** Update C# XML doc comments and OpenAPI/Swagger annotations in the same change (`references/documentation.md`).
+- **Blazor UI changes:** Update user documentation under `docs/user/` (`references/documentation.md`).
+- **Adapted external code:** Add a short attribution comment with source URL and license directly above the snippet (`references/code-attribution.md`).
+- **Standalone change summaries:** Generate via the `pdf` or `docx` skill scoped strictly to the actual diff.
 
-## Core principles
-- **KISS.** Avoid complexity — unnecessary indirection, premature or
-  speculative abstraction, deep nesting, excess configurability, tangled
-  control flow, state scattered across more places than it needs to be.
-  Between two designs that solve the problem, prefer the one a future reader
-  can hold in their head fastest.
-- **SOLID, single responsibility first.** Introduce abstractions (interfaces,
-  extra patterns, layers) only when a concrete need exists — never
-  speculatively (YAGNI): every function, class, and parameter added should be
-  used by the current change, and tests cover current behavior, not
-  speculative future behavior.
-- Clarity and explicitness over cleverness.
-- Reach for an additional design pattern only when SOLID, a real requirement,
-  or a proven pain point calls for it — not by default.
+## Spec-Driven Development (`klk-` Commands)
+Each command reads the prior stage's artifact, enforces mechanical gates via `scripts/sdd_check.py` (never by eye), and halts immediately if a gate fails. Read `references/sdd-overview.md` plus **only** the reference file for the single command invoked:
 
-## Working style
-- **Be direct, not agreeable.** Give the technically correct answer, not the
-  comfortable one — name a real problem (perf, security, maintainability, a
-  footgun) before doing the work. Surface tradeoffs between two reasonable
-  approaches and say which you'd pick. Skip unearned praise; push back on
-  scope creep and over-engineering, including your own prior suggestions.
-- **Plan-approval, test-coverage floors, and build/test/coverage
-  verification are not owned here.** For .NET/C#, React, Python, or
-  TypeScript work, the installed `ai-governance` skill owns that process —
-  its Gate 0 (analyze & plan, blocking), Gate 1 (90% coverage floor), and
-  Gate 3 (verify via the real coverage tool's exit code, not a subjective
-  read) apply in full alongside this skill's style/convention rules. This
-  skill never restates or softens those gates.
-
-## Data access
-Use the Repository pattern for the data-access layer regardless of language,
-kept isolated from business logic. Expose intent-revealing methods rather
-than leaking the underlying query builder/ORM type (`IQueryable`, a
-Prisma/SQLAlchemy query object), unless a specific need justifies otherwise.
-
-## Testing
-Every component and backend functionality unit has corresponding tests,
-covering both happy-path and failing/guard cases. Default to the idiomatic
-framework for the language in play — xUnit (C#), Vitest + React Testing
-Library (TypeScript/JavaScript/React), pytest (Python) — only when the repo
-has no established framework yet. **If the repo already has one installed
-(xUnit, MSTest, Jest, unittest, etc.), follow that instead** — never
-introduce a second test framework alongside an existing one. For C#, this
-is the same convention the installed `dotnet-testing`/`csharp-xunit`/
-`csharp-mstest` skills own; defer to whichever already applies.
-
-For .NET/C#, React, Python, and TypeScript specifically, this is only the
-framework choice — the actual coverage floor (90%, enforced by the real
-coverage tool's exit code) and the plan/implement/verify process around it
-belong to `ai-governance`; apply both together. For plain Node.js/
-JavaScript/HTML work, which `ai-governance` doesn't cover, the bar above is
-the whole of it.
-
-## Documentation & attribution
-- **Public API changes** (an endpoint, controller action, or public
-  function/method/class other code depends on): add or update the
-  language's doc-comment convention and keep OpenAPI/Swagger annotations
-  current, in the same change that adds or modifies the API. See
-  `references/documentation.md`.
-- **User-facing page/feature changes** (Blazor or React): add or update its
-  markdown doc under `docs/user/`. See `references/documentation.md`.
-- **Adapted external code** (from an identifiable doc page, Stack Overflow
-  answer, OSS repo, or blog post — not general knowledge, regardless of how
-  short the snippet is): add a short attribution comment above it, in the
-  code itself (not just chat or a commit message), citing the source URL
-  and license, if known. See `references/code-attribution.md`.
-- **A standalone change summary is wanted and no existing doc covers the
-  change**: produce it as a PDF (or a Word doc, if that fits the audience
-  better) via the `pdf`/`docx` skill rather than hand-rolling one — factual
-  and scoped to the actual diff, not the whole plan restated.
-
-## Spec-driven development (SDD) commands
-Seven `klk-`prefixed commands take a feature from a plain-language
-description through to tested, implemented code and a ready-to-review PR.
-Each reads the previous command's output and refuses to proceed past a gate
-it hasn't met — never guesses past a missing prerequisite. Tests are written
-from the technical spec, *before* stories exist — stories don't invent
-acceptance criteria, they cite which already-written tests they're
-responsible for turning green. See `references/sdd-overview.md` first for
-the shared artifact layout and status model every command below follows.
-
-| Command | Reads | Writes | Loads |
+| Command | Input | Output Artifact | Reference |
 |---|---|---|---|
-| `klk-create-spec` | a feature description | `spec.md` | `references/sdd-create-spec.md` |
-| `klk-create-tech-spec` | an approved `spec.md` | `tech-spec.md` (design + AC) | `references/sdd-create-tech-spec.md` |
-| `klk-create-tests` | an approved `tech-spec.md` | failing tests (red) + `tests.md` | `references/sdd-create-tests.md` |
-| `klk-create-stories` | `tests.md` | `stories.md` (task breakdown) | `references/sdd-create-stories.md` |
-| `klk-implement-stories` | stories ready for implementation | production code (green) | `references/sdd-implement-stories.md` |
-| `klk-run-qa` | implemented stories | test run report | `references/sdd-run-qa.md` |
-| `klk-ship` | stories at `Passing` | `pr-description.md`; staged diff (no commit/push) | `references/sdd-ship.md` |
+| `klk-create-spec` | Feature description | `spec.md` | `references/sdd-create-spec.md` |
+| `klk-create-tech-spec` | Approved `spec.md` | `tech-spec.md` | `references/sdd-create-tech-spec.md` |
+| `klk-create-tests` | Approved `tech-spec.md` | Failing tests + `tests.md` | `references/sdd-create-tests.md` |
+| `klk-create-stories` | `tests.md` | `stories.md` | `references/sdd-create-stories.md` |
+| `klk-implement-stories` | Ready stories | Passing C# code | `references/sdd-implement-stories.md` |
+| `klk-run-qa` | Implemented stories | Test + 90% coverage report | `references/sdd-run-qa.md` |
+| `klk-ship` | `Passing` stories | `pr-description.md` + staged diff | `references/sdd-ship.md` |
 
-**Typical path**: `klk-create-spec` → `klk-create-tech-spec` →
-`klk-create-tests` → `klk-create-stories` → `klk-implement-stories` →
-`klk-run-qa` → `klk-ship`.
+**Pipeline execution rule:** If asked to "run the full SDD workflow for X," run **only the next incomplete stage** determined by existing artifacts on disk, validate it with `scripts/sdd_check.py`, report the artifact path, and prompt the user to `/clear` before continuing to the next stage (or run each stage via an isolated `claude -p "/klk-..."` step).
 
-**Running it**: each command also works standalone (e.g. re-running
-`klk-run-qa` after a fix, or `klk-implement-stories` on one story at a time).
-To run the whole path as one pipeline, just ask for it (e.g. "run the full
-SDD workflow for X") — execute the commands in order, but stop and report at
-whichever command's gate fails (an unresolved `NEEDS CLARIFICATION`, an AC
-with no recorded test, a story missing acceptance criteria) rather than
-forcing through to the next phase.
-
-Load only the reference file for the command actually invoked, plus
-`sdd-overview.md`.
-
-Gate checks and status updates in every command above run through
-`scripts/sdd_check.py` (slug derivation, `NEEDS CLARIFICATION` detection,
-REQ-to-TS/AC coverage, AC-to-test coverage, AC-to-story coverage,
-story status/acceptance-criteria validation, and surgical status edits
-that refuse any illegal state-machine jump) — a script's exit code is the
-gate, not a by-eye read of the markdown. The script itself has a unit-test
-suite at `scripts/tests/test_sdd_check.py`
-(`python3 -m unittest discover -s scripts/tests`) — the gate logic that
-enforces this skill's testing discipline is itself held to it. A project
-that wants these five gates enforced unconditionally, instead of relying
-on the model to actually invoke them, can wire `scripts/sdd_gate_hook.py`
-in as a `PreToolUse` hook — see `sdd-overview.md`'s "making the five
-mechanical gates unconditional" section. See `sdd-overview.md` for which
-subcommand backs which gate.
-
-## References — load only what the current task needs
-- `references/csharp-dotnet-practices.md` — C#/.NET/Blazor naming,
-  component conventions, nullable types, DI/config, logging, project layout.
-- `references/typescript-node-react-practices.md` — TypeScript/JavaScript/
-  React/Node/HTML naming, component conventions, strictness, testing tooling.
-- `references/python-practices.md` — Python naming, PEP 8/257, typing,
-  testing, and the Zen of Python applied to the letter.
-- `references/documentation.md` — API dev-doc and web-app user-doc
-  conventions and templates.
-- `references/code-attribution.md` — when and how to attribute adapted
-  external code.
+## .NET References (Load Only When Needed)
+- `references/csharp-dotnet-practices.md`
+- `references/documentation.md`
+- `references/code-attribution.md`
