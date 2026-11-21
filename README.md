@@ -1,7 +1,6 @@
 # KodeLikeKevinSkill
 
-This is my personal Claude Code skill for how I want *all* code written,
-with an additional layer of conventions for full-stack .NET development (C#
+This skill is used  for full-stack .NET development (C#
 and Blazor). It encodes conventions and safeguards drawn from 15 years of
 software development, so Claude writes code the way I would — instead of
 re-explaining my preferences on every project. The general principles apply
