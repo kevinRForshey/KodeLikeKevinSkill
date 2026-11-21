@@ -4,8 +4,8 @@ Cross-cutting rules every `klk-` SDD command follows. Read this once per SDD
 command invocation, before loading that command's own reference file.
 
 ## Pipeline and artifact layout
-Six commands carry a feature from a plain-language description to verified
-code, each writing one artifact the next reads:
+Seven commands carry a feature from a plain-language description to a
+ready-to-review PR, each writing one artifact the next reads:
 
 | # | Command | Reads | Writes |
 |---|---|---|---|
@@ -15,6 +15,7 @@ code, each writing one artifact the next reads:
 | 4 | `klk-create-stories` | `tests.md` (+ `spec.md`/`tech-spec.md`) | `stories.md` |
 | 5 | `klk-implement-stories` | `stories.md` | production code |
 | 6 | `klk-run-qa` | implemented stories | test-run report |
+| 7 | `klk-ship` | `Passing` stories | `pr-description.md`; staged diff |
 
 The load-bearing design point: **tests are written from the technical spec,
 before stories exist.** `tests.md` is what makes the tests real and
@@ -44,6 +45,10 @@ one feature — never create a second directory for the same feature.
 - `stories.md` — written by `klk-create-stories`, then updated in place by
   `klk-implement-stories` and `klk-run-qa` (status field only — never
   rewrite a story's requirements text in a later phase).
+- `pr-description.md` — written by `klk-ship`. A draft PR body (summary,
+  closed `REQ-*`/`US-*` IDs, test plan) assembled once every story is
+  `Passing` — the pipeline's final artifact, not something earlier commands
+  touch.
 
 Tests and production code are **not** mirrored under `docs/sdd/`
 (`tests.md` is a manifest pointing at them, not a copy) — the real files go
@@ -99,6 +104,10 @@ code as the actual gate, not a read-it-and-judge-for-yourself step:
   acceptance criteria. Run before `klk-implement-stories` and `klk-run-qa`
   to confirm the stories about to be touched are actually ready for that
   phase.
+- `python3 scripts/sdd_check.py gate-ship <tech-spec.md> <stories.md> [--ids <US-IDs>]`
+  — exits 1 if any targeted story isn't `Passing`; with no `--ids` (a
+  whole-feature ship) also exits 1 if any `AC-*` in `tech-spec.md` isn't
+  covered by at least one story's `Covers` line. Run before `klk-ship`.
 
 The remaining gates require judgment a script can't supply, and stay
 manual:
@@ -109,8 +118,8 @@ When a gate isn't met (script exit 1, or a manual check fails), name exactly
 what's missing and stop — don't produce a document or code that looks
 complete to paper over the gap.
 
-### Optional: making the four mechanical gates unconditional
-The four `gate-*` commands above are only as real as the discipline of
+### Optional: making the five mechanical gates unconditional
+The five `gate-*` commands above are only as real as the discipline of
 actually running them — nothing stops a model from writing `tech-spec.md`
 without first running `gate-clarifications` against `spec.md`. Projects
 that want the gate enforced regardless of whether it was invoked can wire
@@ -135,11 +144,12 @@ that want the gate enforced regardless of whether it was invoked can wire
 }
 ```
 
-The hook reads the same `spec.md`/`tech-spec.md`/`tests.md` the `gate-*`
-commands read, and blocks (exit 2) a `Write`/`Edit` of
-`tech-spec.md`/`tests.md`/`stories.md` outright when that file's
-prerequisite gate isn't met — no agent compliance required. It's a no-op
-for every other file path, so enabling it doesn't affect unrelated work.
+The hook reads the same `spec.md`/`tech-spec.md`/`tests.md`/`stories.md`
+the `gate-*` commands read, and blocks (exit 2) a `Write`/`Edit` of
+`tech-spec.md`/`tests.md`/`stories.md`/`pr-description.md` outright when
+that file's prerequisite gate isn't met — no agent compliance required.
+It's a no-op for every other file path, so enabling it doesn't affect
+unrelated work.
 This is opt-in rather than shipped on by default: it only applies within a
 project that adds it to its own `.claude/settings.json`, consistent with
 project conventions always winning over this skill's own defaults.

@@ -29,9 +29,9 @@ projects that opt in):
 
 Reads the PreToolUse JSON payload Claude Code pipes to stdin (fields
 tool_name, tool_input.file_path) per https://code.claude.com/docs/en/hooks.md.
-Any file that isn't docs/sdd/<slug>/{tech-spec,tests,stories}.md is allowed
-unconditionally (exit 0) -- this only guards the SDD planning chain itself,
-never arbitrary project files, so it's safe to enable broadly.
+Any file that isn't docs/sdd/<slug>/{tech-spec,tests,stories,pr-description}.md
+is allowed unconditionally (exit 0) -- this only guards the SDD planning
+chain itself, never arbitrary project files, so it's safe to enable broadly.
 """
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ assert _spec is not None and _spec.loader is not None
 sdd_check = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(sdd_check)
 
-ARTIFACT_RE = re.compile(r"docs/sdd/[^/]+/(tech-spec|tests|stories)\.md$")
+ARTIFACT_RE = re.compile(r"docs/sdd/[^/]+/(tech-spec|tests|stories|pr-description)\.md$")
 
 
 def _read_or_none(path: Path) -> str | None:
@@ -114,10 +114,38 @@ def _check_stories(directory: Path) -> None:
         )
 
 
+def _check_pr_description(directory: Path) -> None:
+    tech_spec_text = _read_or_none(directory / "tech-spec.md")
+    stories_text = _read_or_none(directory / "stories.md")
+    if tech_spec_text is None or stories_text is None:
+        _block(
+            f"BLOCKED by sdd_gate_hook: {directory} is missing tech-spec.md "
+            "or stories.md -- klk-ship needs both before drafting "
+            "pr-description.md."
+        )
+    acs = sdd_check._parse_defined_ac_ids(tech_spec_text)
+    stories = sdd_check._parse_stories(stories_text)
+    covered = {ac for s in stories for ac in s["covers_ac"]}
+    missing_ac = [ac for ac in acs if ac not in covered]
+    if missing_ac:
+        _block(
+            "BLOCKED by sdd_gate_hook: AC(s) not covered by any story -- "
+            "run klk-create-stories first: " + ", ".join(missing_ac)
+        )
+    not_passing = [s for s in stories if s["status"] != "Passing"]
+    if not_passing:
+        _block(
+            "BLOCKED by sdd_gate_hook: story(ies) not Passing yet -- "
+            "run klk-implement-stories/klk-run-qa first: "
+            + ", ".join(f"{s['id']} ({s['status']})" for s in not_passing)
+        )
+
+
 _CHECKS = {
     "tech-spec": _check_tech_spec,
     "tests": _check_tests,
     "stories": _check_stories,
+    "pr-description": _check_pr_description,
 }
 
 

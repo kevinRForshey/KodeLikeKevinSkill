@@ -55,6 +55,24 @@ TESTS_MANIFEST = """\
   - Test: test_thing_happens
 """
 
+STORIES_ALL_PASSING = """\
+## US-001: Do the thing
+- **Covers**: AC-1 (REQ-001/TS-001)
+- **Status**: Passing
+"""
+
+STORIES_ONE_NOT_PASSING = """\
+## US-001: Do the thing
+- **Covers**: AC-1 (REQ-001/TS-001)
+- **Status**: Implemented
+"""
+
+STORIES_MISSING_AC_COVERAGE = """\
+## US-001: Unrelated story
+- **Covers**: AC-2 (REQ-002/TS-002)
+- **Status**: Passing
+"""
+
 
 def run_hook(tool_name: str, file_path: str, content: str = "") -> subprocess.CompletedProcess:
     payload = {
@@ -220,6 +238,43 @@ class StoriesGate(unittest.TestCase):
 
     def test_allows_when_tests_manifest_present(self):
         (self.slug_dir / "tests.md").write_text(TESTS_MANIFEST)
+        result = run_hook("Write", self.target)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stderr, "")
+
+
+class PrDescriptionGate(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.slug_dir = Path(self.tmp.name) / "docs" / "sdd" / "my-feature"
+        self.slug_dir.mkdir(parents=True)
+        self.target = str(self.slug_dir / "pr-description.md")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_blocks_when_tech_spec_or_stories_missing(self):
+        result = run_hook("Write", self.target)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("missing tech-spec.md", result.stderr)
+
+    def test_blocks_when_an_ac_has_no_story(self):
+        (self.slug_dir / "tech-spec.md").write_text(TECH_SPEC_FULL)
+        (self.slug_dir / "stories.md").write_text(STORIES_MISSING_AC_COVERAGE)
+        result = run_hook("Write", self.target)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("AC-1", result.stderr)
+
+    def test_blocks_when_a_story_is_not_passing(self):
+        (self.slug_dir / "tech-spec.md").write_text(TECH_SPEC_FULL)
+        (self.slug_dir / "stories.md").write_text(STORIES_ONE_NOT_PASSING)
+        result = run_hook("Write", self.target)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("not Passing", result.stderr)
+
+    def test_allows_when_fully_covered_and_passing(self):
+        (self.slug_dir / "tech-spec.md").write_text(TECH_SPEC_FULL)
+        (self.slug_dir / "stories.md").write_text(STORIES_ALL_PASSING)
         result = run_hook("Write", self.target)
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stderr, "")

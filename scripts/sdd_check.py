@@ -5,7 +5,7 @@ Backs the gates described in references/sdd-overview.md with real parsing
 instead of asking the model to eyeball markdown. Stdlib only, no deps.
 
 Pipeline: spec.md -> tech-spec.md -> tests (+ tests.md) -> stories.md ->
-implementation -> QA.
+implementation -> QA -> ship.
 
 Subcommands:
   slug <description>
@@ -33,6 +33,12 @@ Subcommands:
       (Ready for Implementation -> Implemented -> Passing, with
       Failing: <reason> reachable from Implemented/Passing and
       recoverable back to Implemented/Passing)
+
+  gate-ship <tech-spec.md> <stories.md> [--ids ID [ID ...]]
+      exit 1 unless every targeted story is Passing. With no --ids
+      (whole-feature ship), also exit 1 unless every AC-* defined in
+      tech-spec.md is covered by at least one story's Covers line —
+      catches an AC that never got picked up by any story.
 """
 from __future__ import annotations
 
@@ -43,6 +49,8 @@ import sys
 STORY_HEADER_RE = re.compile(r"^## (US-\d+):\s*(.*)$")
 STATUS_RE = re.compile(r"^(\s*-\s*\*\*Status\*\*:\s*)(.+?)\s*$")
 AC_RE = re.compile(r"^\s*-\s*\*\*AC-\d+\*\*:")
+COVERS_RE = re.compile(r"^\s*-\s*\*\*Covers\*\*:\s*(.+)$")
+AC_DEF_RE = re.compile(r"^\s*-\s*\*\*(AC-\d+)\*\*")
 NEEDS_CLARIFICATION_RE = re.compile(
     r"\*\*((?:REQ|CON|SC|TS|AC)-\d+)\*\*:\s*NEEDS CLARIFICATION:\s*(.+?)\s*$"
 )
@@ -230,6 +238,7 @@ def _parse_stories(text: str) -> list[dict]:
                 "title": header.group(2),
                 "status": None,
                 "ac_count": 0,
+                "covers_ac": set(),
             }
             stories.append(current)
             continue
@@ -239,9 +248,23 @@ def _parse_stories(text: str) -> list[dict]:
         if status:
             current["status"] = status.group(2)
             continue
+        covers = COVERS_RE.match(line)
+        if covers:
+            current["covers_ac"].update(re.findall(r"AC-\d+", covers.group(1)))
+            continue
         if AC_RE.match(line):
             current["ac_count"] += 1
     return stories
+
+
+def _parse_defined_ac_ids(tech_spec_text: str) -> list[str]:
+    """AC-* ids actually defined (as a '- **AC-N**...' bullet) in tech-spec.md."""
+    ids = []
+    for line in tech_spec_text.splitlines():
+        m = AC_DEF_RE.match(line)
+        if m and m.group(1) not in ids:
+            ids.append(m.group(1))
+    return ids
 
 
 def cmd_gate_stories(args: argparse.Namespace) -> int:
@@ -320,6 +343,70 @@ def cmd_set_status(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_gate_ship(args: argparse.Namespace) -> int:
+    try:
+        tech_spec_text = _read(args.tech_spec_path)
+    except FileNotFoundError:
+        print(f"BLOCKED: no tech spec found at {args.tech_spec_path}")
+        return 1
+    try:
+        stories_text = _read(args.stories_path)
+    except FileNotFoundError:
+        print(f"BLOCKED: no stories file found at {args.stories_path}")
+        return 1
+
+    acs = _parse_defined_ac_ids(tech_spec_text)
+    if not acs:
+        print(f"BLOCKED: no '**AC-N**' acceptance criteria found in {args.tech_spec_path}")
+        return 1
+
+    stories = _parse_stories(stories_text)
+    if not stories:
+        print(f"BLOCKED: no '## US-NNN:' story blocks found in {args.stories_path}")
+        return 1
+
+    targets = stories
+    if args.ids:
+        wanted = set(args.ids)
+        targets = [s for s in stories if s["id"] in wanted]
+        missing_ids = wanted - {s["id"] for s in targets}
+        if missing_ids:
+            print(f"BLOCKED: story ID(s) not found: {', '.join(sorted(missing_ids))}")
+            return 1
+
+    for s in targets:
+        covers = ", ".join(sorted(s["covers_ac"])) or "(none)"
+        print(f"{s['id']} [{s['status']}] covers {covers}")
+
+    problems = []
+    not_passing = [s for s in targets if s["status"] != "Passing"]
+    if not_passing:
+        problems.append(
+            "story(ies) not Passing: "
+            + ", ".join(f"{s['id']} ({s['status']})" for s in not_passing)
+        )
+
+    if not args.ids:
+        covered = {ac for s in stories for ac in s["covers_ac"]}
+        for ac in acs:
+            print(f"{ac}: {'covered' if ac in covered else 'NOT covered by any story'}")
+        missing_ac = [ac for ac in acs if ac not in covered]
+        if missing_ac:
+            problems.append(f"AC(s) not covered by any story: {', '.join(missing_ac)}")
+
+    if problems:
+        print("BLOCKED: " + "; ".join(problems))
+        return 1
+
+    scope = (
+        f"{len(targets)} targeted story(ies)"
+        if args.ids
+        else f"the whole feature ({len(stories)} story(ies), {len(acs)} AC(s))"
+    )
+    print(f"OK: {scope} ready to ship")
+    return 0
+
+
 def _read(path: str) -> str:
     with open(path) as f:
         return f.read()
@@ -358,6 +445,12 @@ def main() -> int:
     p.add_argument("story_id")
     p.add_argument("new_status")
     p.set_defaults(func=cmd_set_status)
+
+    p = sub.add_parser("gate-ship")
+    p.add_argument("tech_spec_path")
+    p.add_argument("stories_path")
+    p.add_argument("--ids", nargs="+")
+    p.set_defaults(func=cmd_gate_ship)
 
     args = parser.parse_args()
     return args.func(args)
