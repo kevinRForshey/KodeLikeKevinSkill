@@ -1,8 +1,7 @@
 # Python Practices
 
-Detail for the "References" pointer in `skill.md`. No specialized skill is
-currently installed for Python, so this skill owns these conventions
-directly.
+Detail for rule 6 ("Match the actual stack") in `SKILL.md`. Loaded on demand
+for Python work only.
 
 ## Naming
 - **snake_case** — functions, variables, modules, packages.

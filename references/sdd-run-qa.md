@@ -46,7 +46,6 @@ story's `Tests:` line references.
 This command is what makes a story's `Passing` status trustworthy — never
 set it from anything short of an actual observed green run.
 
-For .NET/C#, React, Python, or TypeScript, all stories `Passing` here is
-necessary but not sufficient to call the whole feature done — `ai-governance`'s
-Gate 3 (the real coverage-tool exit code, not this command's per-story pass/
-fail) is still the actual completion gate for the change as a whole.
+Stories `Passing` here is necessary but not sufficient to call the feature
+done — `ai-governance`'s Gate 3 coverage check (`SKILL.md`'s Routing &
+Scope section) is the actual completion gate for the change as a whole.

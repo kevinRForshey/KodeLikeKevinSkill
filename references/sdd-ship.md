@@ -58,7 +58,7 @@ changed files staged (`git add`) but not committed.
    show as changed, flag the discrepancy and ask rather than silently
    including or excluding it.
 5. Stage the feature's changed files with `git add` — staging doesn't
-   require asking, per this skill's `## Version control policy`. **Never
+   require asking, per this skill's `## Version Control Policy`. **Never
    run `git commit` or `git push` here**, regardless of how clean the gate
    result looked; those still require the user's explicit go-ahead in the
    current conversation.

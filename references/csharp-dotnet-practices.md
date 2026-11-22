@@ -4,15 +4,17 @@ Detail for the "References" pointer in `skill.md`. These cover topics not
 already owned by another installed skill. For async patterns, EF Core, unit
 testing frameworks, minimal API/OpenAPI conventions, and XML doc comment
 conventions, use the csharp-async, efcore-mssql, dotnet-testing,
-aspnet-minimal-api-openapi, csharp-docs, and dotnet-best-practices skills
-instead of this file.
+aspnet-minimal-api-openapi, and csharp-docs skills instead of this file. The
+installed `dotnet-best-practices` skill already covers the baseline
+"constructor-inject, register sane lifetimes, use `ILogger` structured
+logging" rules — this file adds only the sharper, Blazor/options-pattern-
+specific detail those generic rules don't go into.
 
 ## Naming
 - **PascalCase** — types, methods, properties, events, public fields, namespaces.
 - **camelCase** — local variables and method parameters.
 - **_camelCase** (leading underscore) — private instance fields.
 - Interfaces prefixed with `I` (e.g. `IUserRepository`).
-- Async methods suffixed with `Async`.
 
 ## Blazor components
 - Default to code-behind: `Dashboard.razor` pairs with `Dashboard.razor.cs`.
@@ -45,16 +47,14 @@ string Describe(Shape shape) => shape switch
 
 ## Dependency injection & configuration
 
-- Default service lifetimes: `Scoped` for services that use a `DbContext` or
-  hold per-request/per-circuit state (this matters especially in Blazor
-  Server, where a circuit's scope lives for the connection's lifetime);
-  `Transient` for cheap, stateless services; `Singleton` only for genuinely
-  stateless or thread-safe shared services (e.g., an `IMemoryCache` wrapper).
+- Default service lifetimes: `Scoped` for services holding per-request/
+  per-circuit state; `Transient` for cheap, stateless services; `Singleton`
+  only for genuinely stateless or thread-safe shared services (e.g., an
+  `IMemoryCache` wrapper). For `DbContext` lifetime specifically, see
+  `efcore-mssql` — don't inject a scoped `DbContext` directly and reuse it
+  across awaits/renders.
 - Avoid captive dependencies — never inject a `Scoped` or `Transient`
   service into a `Singleton`.
-- Prefer constructor injection over a service locator; keep DI registrations
-  explicit and visible rather than resolving services ad hoc from
-  `IServiceProvider` inside business logic.
 - Use the options pattern (`IOptions<T>` / `IOptionsSnapshot<T>`) for
   configuration values bound from `appsettings.json`, rather than injecting
   `IConfiguration` directly and reading keys by string throughout the
@@ -79,9 +79,8 @@ public class EmailSender(IOptions<EmailOptions> options)
 
 ## Logging & error handling
 
-- Inject `ILogger<T>` and use structured logging with message templates —
-  never string-concatenate or interpolate values directly into the log
-  message.
+`dotnet-best-practices` already requires structured `ILogger` logging; the
+exact template syntax and the two rules it doesn't cover:
 
 ```csharp
 // Right

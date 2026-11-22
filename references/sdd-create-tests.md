@@ -16,20 +16,18 @@ stories here either; that's `klk-create-stories`, which runs *after* this.
    `tech-spec.md` itself for its `AC-*` list.
 2. Use whatever test framework the target repo already has installed
    (xUnit, MSTest, Jest, unittest, etc.) if one exists — never introduce a
-   second one. Only when none exists yet, default to the idiomatic choice
-   per this skill's `## Testing` section and the matching
-   `references/*-practices.md` file: xUnit (C#), Vitest + React Testing
-   Library (TS/JS/React), pytest (Python).
+   second one. Only when none exists yet: default to xUnit for C# (the
+   `dotnet-testing` skill), or to the idiomatic choice in the
+   `kodelikekevin` skill's language reference files for non-.NET work.
 3. Write one test (or a tightly-grouped set) per `AC-*` in `tech-spec.md`.
    Name or tag each test so it traces back to its AC, e.g.
    `AC003_RejectsExpiredToken` or an `[AC-003]` tag/comment — whatever the
    project's existing test-naming convention favors, extended with the AC
    ID. Cover both the AC's happy path and any guard/error case implied by
-   it. For .NET/C#, React, Python, or TypeScript, these tests also count
-   toward `ai-governance`'s 90% coverage floor and must clear its
-   trivial-assertion screening (a test that only proves a line ran, without
-   asserting real behavior, doesn't count) — write accordingly, don't pad
-   the number.
+   it. These tests also count toward `ai-governance`'s 90% coverage floor
+   and must clear its trivial-assertion screening (a test that only proves
+   a line ran, without asserting real behavior, doesn't count) — write
+   accordingly, don't pad the number.
 4. **Run the new tests and confirm they fail** (red) because the feature
    doesn't exist yet. If a test unexpectedly passes, don't count it as
    covered — report it: either the feature already exists, or the test

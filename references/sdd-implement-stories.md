@@ -14,18 +14,19 @@ each story's status updated to `Implemented`.
    `stories.md` (its `Tests:` line) and the failing tests themselves for
    the story (or stories) to implement.
 2. Implement the minimum real production code that satisfies the story's
-   acceptance criteria and makes its tests pass — following this skill's
-   `## Core principles` (KISS/SOLID/YAGNI) and the relevant
-   `references/*-practices.md` file for naming, component, and data-access
-   conventions in the language in play.
+   acceptance criteria and makes its tests pass — following the
+   `kodelikekevin` skill's SOLID/YAGNI rules, this skill's `## .NET
+   Engineering Principles` for C#/Blazor work, and the matching
+   `references/*-practices.md` file (this skill's for .NET, or the
+   `kodelikekevin` skill's for another language in play).
 3. **Never edit or weaken a test to make it pass.** If a test appears wrong
    — contradicts the story's acceptance criteria or the spec — stop and
    flag the specific discrepancy rather than changing the test unilaterally.
-4. Apply this skill's `## Documentation & attribution` rules to any code
-   touched here: doc comments + OpenAPI annotations for a public API
-   surface change, a `docs/user/` entry for a user-facing feature, and
-   attribution comments for anything adapted from an identifiable external
-   source.
+4. Apply this skill's `## Documentation` rules (doc comments + OpenAPI
+   annotations for a public API surface change, a `docs/user/` entry for a
+   user-facing feature) and the `kodelikekevin` skill's rule 9 (attribution
+   comments for anything adapted from an identifiable external source) to
+   any code touched here.
 5. Run the story's tests yourself as you go (standard red-green-refactor) —
    but **don't mark the story `Passing`**. Update its status only with
    `python3 scripts/sdd_check.py set-status docs/sdd/<feature-slug>/stories.md <US-ID> "Implemented"`;
