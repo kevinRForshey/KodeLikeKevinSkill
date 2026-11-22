@@ -1,8 +1,7 @@
 # TypeScript / Node.js / React / JavaScript / HTML Practices
 
-Detail for the "References" pointer in `skill.md`. No specialized skill is
-currently installed for this ecosystem, so this skill owns these conventions
-directly.
+Detail for rule 6 ("Match the actual stack") in `SKILL.md`. Loaded on demand
+for TypeScript/Node/React work only.
 
 ## Naming
 - **camelCase** — variables, functions, method names.

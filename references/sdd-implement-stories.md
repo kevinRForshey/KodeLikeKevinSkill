@@ -14,10 +14,11 @@ each story's status updated to `Implemented`.
    `stories.md` (its `Tests:` line) and the failing tests themselves for
    the story (or stories) to implement.
 2. Implement the minimum real production code that satisfies the story's
-   acceptance criteria and makes its tests pass — following this skill's
-   `## Core principles` (KISS/SOLID/YAGNI) and the relevant
-   `references/*-practices.md` file for naming, component, and data-access
-   conventions in the language in play.
+   acceptance criteria and makes its tests pass — following the
+   `kodelikekevin` skill's SOLID/YAGNI rules, this skill's `## .NET
+   Engineering Principles` for C#/Blazor work, and the matching
+   `references/*-practices.md` file (this skill's for .NET, or the
+   `kodelikekevin` skill's for another language in play).
 3. **Never edit or weaken a test to make it pass.** If a test appears wrong
    — contradicts the story's acceptance criteria or the spec — stop and
    flag the specific discrepancy rather than changing the test unilaterally.

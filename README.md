@@ -1,12 +1,14 @@
 # KodeLikeKevinSkill
 
-This is my personal Claude Code skill for how I want *all* code written,
-with an additional layer of conventions for full-stack .NET development (C#
-and Blazor). It encodes conventions and safeguards drawn from 15 years of
-software development, so Claude writes code the way I would — instead of
-re-explaining my preferences on every project. The general principles apply
-no matter what language or stack is in play; the .NET/C#/Blazor section
-applies on top of those specifically for .NET work.
+This is my personal Claude Code skill for .NET/C#/Blazor engineering conventions and the
+`klk-`prefixed spec-driven development (SDD) workflow. It encodes conventions and safeguards
+drawn from 15 years of software development, so Claude writes .NET code the way I would —
+instead of re-explaining my preferences on every project.
+
+Language-agnostic judgment (plan-first, YAGNI, SOLID-without-stuffing, validate-before-done,
+token efficiency, code attribution) lives in a separate, synced `kodelikekevin` skill, not in
+this repo — this skill applies on top of that one specifically for .NET/C#/Blazor work, and
+deliberately doesn't restate what the other one already covers.
 
 ## Principles behind this skill
 
@@ -18,45 +20,32 @@ applies on top of those specifically for .NET work.
 - **SOLID first, patterns second.** Single responsibility comes first;
   additional abstractions (interfaces, design patterns) are introduced only
   when a concrete need exists, never speculatively (YAGNI).
-- **Clarity over cleverness.** Readable, explicit code beats compact or
-  clever code.
-- **Simplicity by default.** Reach for extra design patterns only when SOLID
-  or a real requirement calls for them.
 - **Nothing ships undocumented or untested.** Public API changes get XML
-  docs and current OpenAPI annotations; user-facing features get end-user
-  docs; all components and backend functionality get unit tests, including
-  edge cases.
-- **Adapted code is attributed.** Code drawn from an identifiable external
-  source (a doc page, Stack Overflow answer, OSS repo, blog post) is cited
-  with its source and license; code written from general knowledge is not.
+  docs and current OpenAPI annotations; user-facing Blazor features get
+  end-user docs; all components and backend functionality get unit tests,
+  including edge cases.
 - **Git stays under my control.** Claude never runs `git commit` or
   `git push` unless I explicitly ask for that specific action in the current
   conversation — read-only git commands and staging are fine.
-- **Token efficiency without cutting corners.** Claude should conserve
-  context (avoid re-reading files, prefer targeted edits/greps, batch
-  read-only work) but never use that as an excuse to skip a required
-  deliverable like tests or docs.
 - **Project conventions win.** A project's own CLAUDE.md or project-scoped
   skill always overrides the conventions here.
-- **Direct, not agreeable.** State real problems and tradeoffs plainly; skip
-  unearned praise; push back on scope creep and over-engineering.
-- **Plan before changing code, validate before calling it done.** Non-trivial
-  changes get a short plan and a go-ahead first; finished work gets checked
-  against the actual requirement and edge cases, not just "does it compile."
 
 ## Spec-driven development commands
 
 Seven `klk-`prefixed commands carry a feature from a plain-language
 description to a ready-to-review PR: `klk-create-spec` →
 `klk-create-tech-spec` → `klk-create-tests` → `klk-create-stories` →
-`klk-implement-stories` → `klk-run-qa` → `klk-ship`. The load-bearing design
-choice: tests are written from the technical spec, *before* stories exist —
-the Definition of Done (`tests.md`) is fixed before any task breakdown
-happens, so later story-writing can't quietly redefine what "done" means.
-Stories cite which already-written tests they're responsible for turning
-green rather than inventing their own acceptance criteria. The pipeline
-stops at a staged, traceable PR draft — `klk-ship` never commits or pushes;
-that stays the user's call, per this skill's version-control policy.
+`klk-implement-stories` → `klk-run-qa` → `klk-ship`. See `SKILL.md`'s
+command table for each command's input/output/reference file.
+
+The load-bearing design choice: tests are written from the technical spec,
+*before* stories exist — the Definition of Done (`tests.md`) is fixed before
+any task breakdown happens, so later story-writing can't quietly redefine
+what "done" means. Stories cite which already-written tests they're
+responsible for turning green rather than inventing their own acceptance
+criteria. The pipeline stops at a staged, traceable PR draft — `klk-ship`
+never commits or pushes; that stays the user's call, per this skill's
+version-control policy.
 
 Each command reads the previous one's output and refuses to advance past a
 gate it hasn't actually met (an unresolved ambiguity, an AC with no test
@@ -73,52 +62,33 @@ never source code — and has been exercised end-to-end via worked examples
 in a backend (Python) stack, a frontend (TypeScript/React) stack, and a
 .NET/C# stack (a Repository-pattern service with a `record`-based DTO,
 nullable-aware rule lookup, and real `dotnet test` runs confirming each
-test red before the implementation existed and green after).
+test red before the implementation existed and green after). Those worked
+examples predate this skill's narrowing to .NET-only; the gate scripts
+still work the same way for any language, even though this skill's own
+prose now assumes C#.
 
 ## What each file does
 
 - **`SKILL.md`** — The skill's entry point, kept deliberately lean since it
-  loads in full every time the skill triggers. It holds only what's
-  universal across .NET, Node/TS/React, and Python: KISS/SOLID/YAGNI,
-  clarity-over-cleverness, version-control and token-efficiency guardrails,
-  the Repository-pattern rule for data access, the testing bar, and
-  pointers to the reference files below plus the specialized skills to
-  defer to for C#/.NET specifics (e.g. `csharp-async`, `efcore-mssql`,
-  `dotnet-testing`). This is the file Claude reads first and treats as the
-  source of truth; everything language-specific lives one hop away so a
-  single-language task doesn't pay to load conventions for the other two.
+  loads in full every time the skill triggers. Covers .NET/Blazor/SDD
+  routing, version control, and the `klk-` command table; defers to the
+  `kodelikekevin` skill for everything language-agnostic rather than
+  restating it.
 
 - **`references/csharp-dotnet-practices.md`** — Loaded on demand for C#/
   .NET/Blazor work: naming conventions, Blazor code-behind/scoped-file
   rules, nullable reference types, use of `record` types and pattern
   matching, DI service lifetimes and the options pattern for configuration,
   structured logging and exception-handling boundaries, and layered
-  solution/project structure.
-
-- **`references/typescript-node-react-practices.md`** — Loaded on demand
-  for TypeScript/JavaScript/React/Node/HTML work: naming conventions,
-  TypeScript strictness, React/hooks component conventions, a Next.js App
-  Router subsection, Node.js patterns, HTML semantics/accessibility, and
-  testing tooling (Vitest + React Testing Library).
-
-- **`references/python-practices.md`** — Loaded on demand for Python work:
-  naming conventions, PEP 8 style and dependency management, typing
-  (including Pydantic for FastAPI schemas), PEP 257 docstrings, pytest
-  conventions, EEG/EDF-style signal-processing notes, and the Zen of Python
-  applied literally.
+  solution/project structure. Scoped to skip what the installed
+  `dotnet-best-practices` skill already covers.
 
 - **`references/documentation.md`** — Loaded on demand when API or
-  user-facing changes are made. Details exactly what's required for API
-  developer documentation (doc comments + OpenAPI/Swagger annotations,
-  per language) and for end-user documentation of Blazor/React features
-  (`docs/user/*.md`), including when a new doc file is warranted versus
-  updating an existing one.
-
-- **`references/code-attribution.md`** — Loaded on demand when code is
-  adapted from an external source. Defines what counts as an "identifiable
-  source" requiring attribution, the comment format to use
-  (`// Source: <url> (<license>) — <note>`), and how to handle sources with
-  an unstated license.
+  user-facing changes are made. Details what's required for .NET API
+  developer documentation (doc comments + OpenAPI/Swagger annotations)
+  and for end-user documentation of Blazor features (`docs/user/*.md`),
+  including when a new doc file is warranted versus updating an existing
+  one.
 
 - **`references/sdd-overview.md`** — Loaded once per SDD command
   invocation. The shared artifact layout (`docs/sdd/<feature-slug>/`:
@@ -126,6 +96,10 @@ test red before the implementation existed and green after).
   `pr-description.md`), the story status model (`Ready for Implementation`
   → `Implemented` → `Passing`), and the gate/traceability rules all seven
   `klk-` commands follow.
+
+- **`references/sdd-hook-setup.md`** — Loaded only when actually wiring the
+  optional `PreToolUse` gate-enforcement hook into a project's own
+  `.claude/settings.json`; not needed to run any `klk-` command itself.
 
 - **`references/sdd-create-spec.md`**, **`sdd-create-tech-spec.md`**,
   **`sdd-create-tests.md`**, **`sdd-create-stories.md`**,
@@ -156,15 +130,26 @@ test red before the implementation existed and green after).
   the model choosing to run them: wired into a project's own
   `.claude/settings.json`, it blocks a `Write`/`Edit` of
   `tech-spec.md`/`tests.md`/`stories.md`/`pr-description.md` outright when
-  that file's prerequisite gate isn't met. See `references/sdd-overview.md`'s
-  "Optional: making the five mechanical gates unconditional" section for
-  the exact settings.json snippet. Its own tests
+  that file's prerequisite gate isn't met. See `references/sdd-hook-setup.md`
+  for the exact settings.json snippet. Its own tests
   (`scripts/tests/test_sdd_gate_hook.py`) invoke it the same way Claude
   Code does — JSON piped to stdin — not just its functions directly.
 
-- **`.github/workflows/test.yml`** — Runs that same unit-test suite on every
-  push/PR, against Python 3.9 and 3.12, so a regression in the gate script
-  can't land silently.
+- **`scripts/token_budget.py`** — Measures the estimated token cost of
+  every load path through this skill (the bare `SKILL.md` trigger, and
+  `SKILL.md` + `sdd-overview.md` + each `klk-` command's own reference
+  file) against a ceiling, so a future edit can't quietly re-inflate what
+  gets loaded without CI catching it.
+
+- **`.github/workflows/test.yml`** — Runs that same unit-test suite, plus
+  the token budget check, on every push/PR, against Python 3.9 and 3.12,
+  so a regression in the gate script or a token-budget blowout can't land
+  silently.
+
+- **`universal-skill/`** — Not part of this installed skill. A staged
+  replacement for the separate `kodelikekevin` skill (see its own
+  `README.md`), kept here so the two skills' division of responsibility is
+  reviewable in one repo even though they're authored/synced separately.
 
 - **`LICENSE`** — Apache License 2.0 covering this skill's contents.
 

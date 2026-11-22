@@ -16,3 +16,4 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python3 -m unittest discover -s scripts/tests -v
+      - run: python3 scripts/token_budget.py --check

@@ -1,36 +1,17 @@
 # SDD Commands — Shared Conventions
 
 Cross-cutting rules every `klk-` SDD command follows. Read this once per SDD
-command invocation, before loading that command's own reference file.
+command invocation, before loading that command's own reference file. For
+which command reads/writes which artifact, see `SKILL.md`'s command table —
+not repeated here.
 
-## Pipeline and artifact layout
-Seven commands carry a feature from a plain-language description to a
-ready-to-review PR, each writing one artifact the next reads:
-
-| # | Command | Reads | Writes |
-|---|---|---|---|
-| 1 | `klk-create-spec` | a feature description | `spec.md` |
-| 2 | `klk-create-tech-spec` | approved `spec.md` | `tech-spec.md` |
-| 3 | `klk-create-tests` | approved `tech-spec.md` | failing tests + `tests.md` |
-| 4 | `klk-create-stories` | `tests.md` (+ `spec.md`/`tech-spec.md`) | `stories.md` |
-| 5 | `klk-implement-stories` | `stories.md` | production code |
-| 6 | `klk-run-qa` | implemented stories | test-run report |
-| 7 | `klk-ship` | `Passing` stories | `pr-description.md`; staged diff |
-
-The load-bearing design point: **tests are written from the technical spec,
-before stories exist.** `tests.md` is what makes the tests real and
-traceable — it's the Definition of Done for the feature. Stories, created
-afterward, don't invent new acceptance criteria; each one cites which
-already-existing AC/tests it's responsible for turning green. This keeps
-"what does done mean" fixed before any implementation-sized task breakdown
-happens, instead of letting task breakdown quietly redefine done.
-
+## Artifact layout
 All artifacts live under `docs/sdd/<feature-slug>/`, where `<feature-slug>`
 is a kebab-case slug derived from the feature description (e.g.
 `user-password-reset`). Derive it with
 `python3 scripts/sdd_check.py slug "<description>"` rather than guessing by
 eye, so the same feature lands in the same directory across commands run in
-separate turns. Reuse the same slug/directory across all six commands for
+separate turns. Reuse the same slug/directory across all seven commands for
 one feature — never create a second directory for the same feature.
 
 - `spec.md` — written by `klk-create-spec`. **What**: functional
@@ -66,93 +47,42 @@ recoverable only back to `Implemented` or `Passing` once fixed).
 
 There's no `Draft` or "Tests Written" status in this model — tests already
 exist by the time a story is created (`klk-create-stories` writes every
-story straight to `Ready for Implementation`, since there's no earlier
-phase for a story to be a draft of or to advance from), so no command owns
-a transition into or out of either state.
+story straight to `Ready for Implementation`), so no command owns a
+transition into or out of either state.
 
 Change the status field with
 `python3 scripts/sdd_check.py set-status <stories.md> <US-ID> <NewStatus>`
 — it rewrites only that one line, **and refuses any transition that isn't a
-legal single step** (e.g. `Ready for Implementation` straight to `Passing`,
-or `Passing` straight back to `Ready for Implementation`). This is what
-makes "never jump a story ahead of a phase it didn't actually perform"
-mechanically true instead of just a request: the script itself enforces
-the state machine, not only a by-eye read of what status a story currently
-claims.
+legal single step** (e.g. `Ready for Implementation` straight to `Passing`).
+This is what makes "never jump a story ahead of a phase it didn't actually
+perform" mechanically true instead of just a request.
 
 ## Gates — never guess past a missing prerequisite
-Every command starts by checking its required input is actually ready.
-Four of these checks are mechanical — run the script and treat its exit
-code as the actual gate, not a read-it-and-judge-for-yourself step:
-- `python3 scripts/sdd_check.py gate-clarifications <spec.md|tech-spec.md>`
-  — exits 1 and lists any unresolved `NEEDS CLARIFICATION` markers. Run
-  before `klk-create-tech-spec` (against `spec.md`) and before
-  `klk-create-tests` (against `tech-spec.md`).
-- `python3 scripts/sdd_check.py gate-coverage <spec.md> <tech-spec.md>` —
-  exits 1 if any `REQ-*` defined in `spec.md` isn't cited by at least one
-  `TS-*` and at least one `AC-*` in `tech-spec.md`'s bracket annotations.
-  Run at the end of `klk-create-tech-spec`, alongside its own
-  `gate-clarifications` check — this is what makes rule 3 in that
-  command's own reference file (every `REQ-*` covered) an actual gate
-  instead of a self-check the model can forget to run.
-- `python3 scripts/sdd_check.py gate-tests <tests.md> --acs <AC-IDs>` —
-  exits 1 if `tests.md` is missing, or if any named `AC-*` has zero
-  recorded test entries. Run before `klk-create-stories` for the AC(s) the
-  upcoming stories will cite.
-- `python3 scripts/sdd_check.py gate-stories <stories.md> --ids <US-IDs> --status <allowed statuses>`
-  — exits 1 if any targeted story isn't at an allowed status or has zero
-  acceptance criteria. Run before `klk-implement-stories` and `klk-run-qa`
-  to confirm the stories about to be touched are actually ready for that
-  phase.
-- `python3 scripts/sdd_check.py gate-ship <tech-spec.md> <stories.md> [--ids <US-IDs>]`
-  — exits 1 if any targeted story isn't `Passing`; with no `--ids` (a
-  whole-feature ship) also exits 1 if any `AC-*` in `tech-spec.md` isn't
-  covered by at least one story's `Covers` line. Run before `klk-ship`.
+Every command starts by checking its required input is actually ready. Each
+command's own reference file names the exact script invocation and what to
+do on failure; this table is just the map of which gate runs where:
 
-The remaining gates require judgment a script can't supply, and stay
-manual:
-- Tests in `tests.md` claimed red with no actual failing run observed.
-- A story claimed `Implemented` with no passing test run backing it.
+| Gate | Run before | Exits 1 when |
+|---|---|---|
+| `gate-clarifications <spec\|tech-spec.md>` | `klk-create-tech-spec`, `klk-create-tests` | unresolved `NEEDS CLARIFICATION` markers |
+| `gate-coverage <spec.md> <tech-spec.md>` | end of `klk-create-tech-spec` | a `REQ-*` missing a `TS-*`/`AC-*` |
+| `gate-tests <tests.md> --acs <AC-IDs>` | `klk-create-stories` | a named `AC-*` has no test entry |
+| `gate-stories <stories.md> --ids <US-IDs> --status <...>` | `klk-implement-stories`, `klk-run-qa` | a targeted story isn't at an allowed status, or has no AC |
+| `gate-ship <tech-spec.md> <stories.md> [--ids <US-IDs>]` | `klk-ship` | a targeted story isn't `Passing` (or, whole-feature, an `AC-*` has no `Passing` story) |
+
+All five are mechanical — run the script and treat its exit code as the
+actual gate, not a read-it-and-judge-for-yourself step. Two remaining checks
+require judgment a script can't supply and stay manual: tests in `tests.md`
+claimed red with no actual failing run observed, and a story claimed
+`Implemented` with no passing test run backing it.
 
 When a gate isn't met (script exit 1, or a manual check fails), name exactly
 what's missing and stop — don't produce a document or code that looks
 complete to paper over the gap.
 
-### Optional: making the five mechanical gates unconditional
-The five `gate-*` commands above are only as real as the discipline of
-actually running them — nothing stops a model from writing `tech-spec.md`
-without first running `gate-clarifications` against `spec.md`. Projects
-that want the gate enforced regardless of whether it was invoked can wire
-`scripts/sdd_gate_hook.py` in as a `PreToolUse` hook in that project's
-`.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/scripts/sdd_gate_hook.py\""
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-The hook reads the same `spec.md`/`tech-spec.md`/`tests.md`/`stories.md`
-the `gate-*` commands read, and blocks (exit 2) a `Write`/`Edit` of
-`tech-spec.md`/`tests.md`/`stories.md`/`pr-description.md` outright when
-that file's prerequisite gate isn't met — no agent compliance required.
-It's a no-op for every other file path, so enabling it doesn't affect
-unrelated work.
-This is opt-in rather than shipped on by default: it only applies within a
-project that adds it to its own `.claude/settings.json`, consistent with
-project conventions always winning over this skill's own defaults.
+To make these five gates unconditional instead of relying on the model to
+run them, see `references/sdd-hook-setup.md` (project setup, loaded only
+when actually wiring that in — not needed to run a command).
 
 ## Resolving a clarification gate and continuing
 When a command refuses because of a `NEEDS CLARIFICATION` marker (or any
