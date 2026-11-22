@@ -1,7 +1,6 @@
 # Documentation Requirements
 
-Detail for the `## Documentation & attribution` section in `SKILL.md`.
-Applies whenever this skill's "Use this skill when" triggers apply.
+Detail for the `## Documentation` section in `SKILL.md`.
 
 ## API developer documentation
 
@@ -44,9 +43,8 @@ in those stacks.
 
 ## Web application user documentation
 
-Any time you add or change a user-facing page or feature — a Blazor page,
-a React page/component, or any other UI — add or update a markdown file
-describing it for end users:
+Any time you add or change a user-facing Blazor page or component, add or
+update a markdown file describing it for end users:
 
 - **Location:** `docs/user/<feature-name>.md` (one file per feature/page;
   kebab-case filename matching the feature).

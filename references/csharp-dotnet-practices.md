@@ -15,7 +15,6 @@ specific detail those generic rules don't go into.
 - **camelCase** — local variables and method parameters.
 - **_camelCase** (leading underscore) — private instance fields.
 - Interfaces prefixed with `I` (e.g. `IUserRepository`).
-- Async methods suffixed with `Async`.
 
 ## Blazor components
 - Default to code-behind: `Dashboard.razor` pairs with `Dashboard.razor.cs`.
@@ -48,11 +47,12 @@ string Describe(Shape shape) => shape switch
 
 ## Dependency injection & configuration
 
-- Default service lifetimes: `Scoped` for services that use a `DbContext` or
-  hold per-request/per-circuit state (this matters especially in Blazor
-  Server, where a circuit's scope lives for the connection's lifetime);
-  `Transient` for cheap, stateless services; `Singleton` only for genuinely
-  stateless or thread-safe shared services (e.g., an `IMemoryCache` wrapper).
+- Default service lifetimes: `Scoped` for services holding per-request/
+  per-circuit state; `Transient` for cheap, stateless services; `Singleton`
+  only for genuinely stateless or thread-safe shared services (e.g., an
+  `IMemoryCache` wrapper). For `DbContext` lifetime specifically, see
+  `efcore-mssql` — don't inject a scoped `DbContext` directly and reuse it
+  across awaits/renders.
 - Avoid captive dependencies — never inject a `Scoped` or `Transient`
   service into a `Singleton`.
 - Use the options pattern (`IOptions<T>` / `IOptionsSnapshot<T>`) for

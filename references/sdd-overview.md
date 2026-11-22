@@ -6,61 +6,43 @@ which command reads/writes which artifact, see `SKILL.md`'s command table —
 not repeated here.
 
 ## Artifact layout
-All artifacts live under `docs/sdd/<feature-slug>/`, where `<feature-slug>`
-is a kebab-case slug derived from the feature description (e.g.
-`user-password-reset`). Derive it with
+All artifacts live under `docs/sdd/<feature-slug>/`. Derive the slug with
 `python3 scripts/sdd_check.py slug "<description>"` rather than guessing by
-eye, so the same feature lands in the same directory across commands run in
-separate turns. Reuse the same slug/directory across all seven commands for
-one feature — never create a second directory for the same feature.
+eye, and reuse the same slug/directory across all seven commands for one
+feature — never create a second directory for the same feature.
 
-- `spec.md` — written by `klk-create-spec`. **What**: functional
-  requirements (`REQ-*`), constraints (`CON-*`), success criteria (`SC-*`).
-- `tech-spec.md` — written by `klk-create-tech-spec`. **How**: technical
-  design items (`TS-*`) mapped to `REQ-*`, and the Given/When/Then
-  acceptance criteria (`AC-*`) that tests will be written against.
-- `tests.md` — written by `klk-create-tests`. A manifest, not the tests
-  themselves: for each `AC-*`, the real test name(s)/file path(s) that
-  verify it, confirmed red at the time this file was written. This is the
-  feature's Definition of Done.
-- `stories.md` — written by `klk-create-stories`, then updated in place by
-  `klk-implement-stories` and `klk-run-qa` (status field only — never
-  rewrite a story's requirements text in a later phase).
-- `pr-description.md` — written by `klk-ship`. A draft PR body (summary,
-  closed `REQ-*`/`US-*` IDs, test plan) assembled once every story is
-  `Passing` — the pipeline's final artifact, not something earlier commands
-  touch.
+| Artifact | Written by | Holds |
+|---|---|---|
+| `spec.md` | `klk-create-spec` | `REQ-*`/`CON-*`/`SC-*` — the **what** |
+| `tech-spec.md` | `klk-create-tech-spec` | `TS-*` + Given/When/Then `AC-*` — the **how** |
+| `tests.md` | `klk-create-tests` | per-`AC-*` real test name(s)/path(s), confirmed red — the Definition of Done |
+| `stories.md` | `klk-create-stories`; status field updated in place by `klk-implement-stories`/`klk-run-qa` | per-story requirements + status |
+| `pr-description.md` | `klk-ship` | summary, closed `REQ-*`/`US-*` IDs, test plan |
 
-Tests and production code are **not** mirrored under `docs/sdd/`
-(`tests.md` is a manifest pointing at them, not a copy) — the real files go
-in the project's idiomatic test/source locations (see this skill's own
-`## Testing` section and the relevant `references/*-practices.md` file for
-the language in play). `docs/sdd/` holds only the planning/traceability
-artifacts.
+A later phase updates only the status field in `stories.md` — never a
+story's requirements text. Tests and production code are never mirrored
+under `docs/sdd/` (`tests.md` is a manifest pointing at them, not a copy) —
+they live in the project's idiomatic locations; `docs/sdd/` holds only
+planning/traceability artifacts.
 
 ## Story status model
-Each story in `stories.md` carries one status, advanced only by the command
-named, one legal step at a time:
+One status per story, advanced one legal step at a time by the command
+named:
 `Ready for Implementation` → `Implemented` → `Passing`
-(or `Failing: <reason>`, reachable only from `Implemented`/`Passing`, and
-recoverable only back to `Implemented` or `Passing` once fixed).
+(or `Failing: <reason>`, reachable and recoverable only via `Implemented`/
+`Passing`).
 
-There's no `Draft` or "Tests Written" status in this model — tests already
-exist by the time a story is created (`klk-create-stories` writes every
-story straight to `Ready for Implementation`), so no command owns a
-transition into or out of either state.
-
-Change the status field with
+Change it with
 `python3 scripts/sdd_check.py set-status <stories.md> <US-ID> <NewStatus>`
-— it rewrites only that one line, **and refuses any transition that isn't a
-legal single step** (e.g. `Ready for Implementation` straight to `Passing`).
-This is what makes "never jump a story ahead of a phase it didn't actually
-perform" mechanically true instead of just a request.
+— rewrites only that line and refuses any transition that isn't a legal
+single step (e.g. `Ready for Implementation` straight to `Passing`), which
+is what makes "never jump a story ahead of a phase it didn't perform"
+mechanically true.
 
 ## Gates — never guess past a missing prerequisite
-Every command starts by checking its required input is actually ready. Each
-command's own reference file names the exact script invocation and what to
-do on failure; this table is just the map of which gate runs where:
+Every command checks its required input is actually ready before
+proceeding. Each command's own reference file names the exact invocation
+and what to do on failure; this is just the map of which gate runs where:
 
 | Gate | Run before | Exits 1 when |
 |---|---|---|
@@ -70,44 +52,26 @@ do on failure; this table is just the map of which gate runs where:
 | `gate-stories <stories.md> --ids <US-IDs> --status <...>` | `klk-implement-stories`, `klk-run-qa` | a targeted story isn't at an allowed status, or has no AC |
 | `gate-ship <tech-spec.md> <stories.md> [--ids <US-IDs>]` | `klk-ship` | a targeted story isn't `Passing` (or, whole-feature, an `AC-*` has no `Passing` story) |
 
-All five are mechanical — run the script and treat its exit code as the
-actual gate, not a read-it-and-judge-for-yourself step. Two remaining checks
-require judgment a script can't supply and stay manual: tests in `tests.md`
-claimed red with no actual failing run observed, and a story claimed
-`Implemented` with no passing test run backing it.
+All five are mechanical — treat the exit code as the actual gate, not a
+read-it-and-judge-for-yourself step. Two checks stay manual (no script can
+verify them): tests in `tests.md` claimed red with no actual failing run
+observed, and a story claimed `Implemented` with no passing test run
+backing it.
 
-When a gate isn't met (script exit 1, or a manual check fails), name exactly
-what's missing and stop — don't produce a document or code that looks
-complete to paper over the gap.
+Either way — script exit 1, or a manual check fails — name exactly what's
+missing and stop; don't produce a document or code that looks complete to
+paper over the gap. If the failure is `NEEDS CLARIFICATION`, see
+`references/sdd-clarification-loop.md` for how to resolve it and continue.
 
 To make these five gates unconditional instead of relying on the model to
 run them, see `references/sdd-hook-setup.md` (project setup, loaded only
-when actually wiring that in — not needed to run a command).
-
-## Resolving a clarification gate and continuing
-When a command refuses because of a `NEEDS CLARIFICATION` marker (or any
-other missing prerequisite), the loop back to progress is:
-
-1. The user answers the named question(s), in chat or by editing the
-   artifact directly.
-2. Edit the artifact **in place**: replace the `NEEDS CLARIFICATION: <question>`
-   text with the resolved requirement, at the same `REQ-*`/`CON-*`/`TS-*`/
-   `AC-*` ID — don't delete the item or renumber IDs, and don't bury the
-   resolution somewhere else in the document. This keeps every ID stable
-   for anything that already traces to it.
-3. Re-invoke the same command (which re-runs `gate-clarifications` itself),
-   or run that check directly first if just confirming before re-invoking.
-   Either way the gate re-reads the artifact from disk — it never assumes
-   it's satisfied just because the user said so in chat.
-4. If multiple markers existed, resolving some but not all still blocks —
-   the command refuses again and names only the ones still open.
+when actually wiring that in).
 
 ## Traceability
 Carry IDs forward through every downstream artifact: a `REQ-*` traces to
-the `TS-*`/`AC-*` in `tech-spec.md` that implement it, each `AC-*` traces to
-its test entry/entries in `tests.md`, and each story in `stories.md` cites
-the `REQ-*`/`TS-*`/`AC-*` (and therefore the test names) it's responsible
-for turning green. A commit/PR description for implementation work should
-name the story IDs it closes. This is what makes `klk-run-qa`'s report
-meaningful — a failing test must be traceable back to one `AC-*` and one
-story, not a vague "something broke."
+the `TS-*`/`AC-*` that implement it, each `AC-*` traces to its test
+entry/entries, and each story cites the `REQ-*`/`TS-*`/`AC-*` (and
+therefore test names) it's responsible for turning green. A commit/PR
+description should name the story IDs it closes. This is what makes a
+failing test traceable back to one `AC-*` and one story, not a vague
+"something broke."

@@ -24,7 +24,7 @@ Never run `git commit` or `git push` unless explicitly requested for that specif
 
 ## .NET Engineering Principles
 - **Data access:** Isolate persistence behind the **Repository pattern** with intent-revealing methods; do not leak `IQueryable<T>` or raw ORM query objects across service/business boundaries.
-- **Testing:** Add unit/integration tests covering happy paths and guard/failure cases using the test framework already present in the solution (defaulting to xUnit only when no test project exists).
+- **Testing:** Use the `dotnet-testing` skill for framework choice and coverage expectations.
 
 ## Documentation (on top of `kodelikekevin` rule 7)
 - **Public APIs:** Update C# XML doc comments and OpenAPI/Swagger annotations in the same change (`references/documentation.md`).

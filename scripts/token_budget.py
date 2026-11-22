@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Keep these ceilings tight enough to catch regrowth, loose enough not to
 # flap on a few words of legitimate added detail.
-SKILL_MD_CEILING = 1_350
-COMMAND_PATH_CEILING = 3_850
+SKILL_MD_CEILING = 1_300
+COMMAND_PATH_CEILING = 3_300
 
 COMMANDS = {
     "klk-create-spec": "sdd-create-spec.md",

@@ -101,6 +101,11 @@ prose now assumes C#.
   optional `PreToolUse` gate-enforcement hook into a project's own
   `.claude/settings.json`; not needed to run any `klk-` command itself.
 
+- **`references/sdd-clarification-loop.md`** — Loaded only when a command
+  actually refuses on `gate-clarifications`: how to resolve a `NEEDS
+  CLARIFICATION` marker in place and re-run the gate. Not part of the
+  per-command load path on a normal (non-blocked) run.
+
 - **`references/sdd-create-spec.md`**, **`sdd-create-tech-spec.md`**,
   **`sdd-create-tests.md`**, **`sdd-create-stories.md`**,
   **`sdd-implement-stories.md`**, **`sdd-run-qa.md`**, **`sdd-ship.md`** —
